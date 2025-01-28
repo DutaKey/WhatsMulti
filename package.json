@@ -1,0 +1,30 @@
+{
+  "name": "whatsmulti",
+  "version": "1.0.0",
+  "description": "Whatsapp Client With Multi Session",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "pino-pretty": "^13.0.0",
+    "qrcode-terminal": "^0.12.0",
+    "pino": "^7.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DutaKey/WhatsMulti.git"
+  },
+  "keywords": [
+    "whatsapp"
+  ],
+  "author": "DutaKey",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DutaKey/WhatsMulti/issues"
+  },
+  "homepage": "https://github.com/DutaKey/WhatsMulti#readme"
+}
