@@ -3,7 +3,7 @@ import WhatsMulti from "../src";
 // Start the WhatsMulti example
 const start = async () => {
     // Create the first session with local storage
-    WhatsMulti.createSession({ sessionId: "session-1", connectionType: "local" });
+    await WhatsMulti.createSession("session-1", "local");
 
     // Event listeners for session status changes
     WhatsMulti.on('disconnected', (_, sessionId) => console.log(sessionId, "is Disconnected."));
@@ -41,10 +41,8 @@ const start = async () => {
             case "create":
                 // Create a new session dynamically
                 let newSessionId = text.split(" ")[1] || "session-2";
-                WhatsMulti.createSession({
-                    sessionId: newSessionId,
-                    connectionType: "local",
-                    options: { printQrOnTerminal: false } // Prevent QR from printing in terminal
+                WhatsMulti.createSession(newSessionId, "local", {
+                    printQRInTerminal: false
                 });
 
                 // Send QR code when it's generated

@@ -28,7 +28,7 @@ const handleConnectionUpdate = ({ eventValue, sessionId }): void => {
         const isLoggedOut = (lastDisconnect?.error as Boom)?.output?.statusCode === DisconnectReason.loggedOut;
         if (connection === 'close') {
             if (!isLoggedOut && session) {
-                createSession({ sessionId, connectionType: session.connectionType, options: session.options });
+                createSession(sessionId, session.connectionType, session.meta.socketConfig ,session.meta.options);
             } else {
                 deleteSession(sessionId);
                 events.get('disconnected')?.({}, sessionId);
