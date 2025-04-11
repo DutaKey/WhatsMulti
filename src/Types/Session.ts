@@ -1,22 +1,23 @@
-import { WAConnectionState, WASocket } from "@whiskeysockets/baileys";
-import { ConnectionType } from "./Connection";
+import { SocketConfig, WAConnectionState, WASocket } from '@whiskeysockets/baileys';
+import { ConnectionType } from './Connection';
 
 export type SessionStatusType = WAConnectionState;
 
-type CreateSessionOptionsType = {
-    printQrOnTerminal?: boolean
-    baileysLoggerLevel?: "debug" | "silent"
-}
+export type CreateSessionOptionsType = {};
 
-export type CreateSessionType = {
-    sessionId: string;
+export type LoggerLevel = 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
+
+export type SockConfig = SocketConfig & { loggerLevel: LoggerLevel };
+
+export type SessionStoreType = {
+    sock: WASocket;
+    status: SessionStatusType | 'close';
     connectionType: ConnectionType;
-    options?: CreateSessionOptionsType
-}
+    meta: MetaSessionStoreType;
+};
 
-export interface SessionStoreType {
-	sock: WASocket;
-    status: SessionStatusType | "close";
-	connectionType: ConnectionType;
-    options?: CreateSessionOptionsType
-}
+type MetaSessionStoreType = {
+    socketConfig?: Partial<SockConfig>;
+    options?: CreateSessionOptionsType;
+    createdAt?: Date;
+};
