@@ -1,78 +1,96 @@
-import WhatsMulti from "../src";
+import WhatsMulti from '../src';
 
 // Start the WhatsMulti example
 const start = async () => {
+    const client = new WhatsMulti({
+        mongoUri: 'mongodb://localhost:27017/whatsmulti',
+    });
+
     // Create the first session with local storage
-    await WhatsMulti.createSession("session-1", "local");
+    await client.createSession('session-1', 'mongodb');
 
     // Event listeners for session status changes
-    WhatsMulti.on('disconnected', (_, sessionId) => console.log(sessionId, "is Disconnected."));
-    WhatsMulti.on("connecting", (_, sessionId) => console.log(sessionId, "is Connecting..."));
-    WhatsMulti.on("connected", (_, sessionId) => console.log(sessionId, "is Connected."));
+    client.on('disconnected', (_, sessionId) => console.log(sessionId, 'is Disconnected.'));
+    client.on('connecting', (_, sessionId) => console.log(sessionId, 'is Connecting...'));
+    client.on('connected', (_, sessionId) => console.log(sessionId, 'is Connected.'));
 
     // Listen for QR Code event and log it
-    WhatsMulti.on("qr", (qr) => console.log(qr));
+    client.on('qr', (data) => console.log(data));
 
     // Listen for incoming messages
-    WhatsMulti.on("messages.upsert", (data, sessionId, sock) => {
+    client.on('messages.upsert', (data, sessionId) => {
         const msg = data.messages[0];
         if (msg.key.fromMe) return; // Ignore messages sent by the bot
 
-        const text = msg.message?.conversation || "";
-        const command = text.split(" ")[0]; // Extract command from message
+        const text = msg.message?.conversation || '';
+        const command = text.split(' ')[0]; // Extract command from message
 
         switch (command) {
-            case "status":
+            case 'status':
                 // Get and send the session status
-                const status = WhatsMulti.getSessionStatus(sessionId);
-                WhatsMulti.sendMessage(sessionId, msg, {
-                    text: `Status: ${sessionId} is ${status}`
+                const status = client.getSessionStatus(sessionId);
+                client.sendMessage(sessionId, msg, {
+                    text: `Status: ${sessionId} is ${status}`,
                 });
                 break;
 
-            case "allsessions":
+            case 'allsessions':
                 // List all active sessions
-                const sessions = WhatsMulti.getSessions();
-                WhatsMulti.sendMessage(sessionId, msg, {
-                    text: `Total Sessions: ${sessions.length}\n${sessions.join("\n")}`
+                const sessions = client.getSessions();
+                client.sendMessage(sessionId, msg, {
+                    text: `Total Sessions: ${sessions.length}\n${sessions.join('\n')}`,
                 });
                 break;
 
-            case "create":
+            case 'create':
                 // Create a new session dynamically
-                let newSessionId = text.split(" ")[1] || "session-2";
-                WhatsMulti.createSession(newSessionId, "local", {
-                    printQRInTerminal: false
+                let newSessionIdVar = text.split(' ')[1] || 'session-2';
+                client.createSession(newSessionIdVar, 'local', {
+                    printQRInTerminal: false,
                 });
 
                 // Send QR code when it's generated
-                WhatsMulti.on('qr', (qr, sessionId) => {
-                    if (sessionId === newSessionId) {
-                        WhatsMulti.sendMessage(sessionId, msg, { image: qr.image, caption: "Scan QR Code." });
+                client.on('qr', (data, newSessionId) => {
+                    if (newSessionId === newSessionIdVar) {
+                        const base64Data = data.image.replace(/^data:image\/png;base64,/, '');
+                        const buffer = Buffer.from(base64Data, 'base64');
+                        client.sendMessage(sessionId, msg, {
+                            image: buffer,
+                            caption: 'Scan QR Code.',
+                        });
                     }
                 });
 
                 // Notify when the session is connected
-                WhatsMulti.on('connected', (_, sessionId) => {
-                    if (sessionId === newSessionId) {
-                        WhatsMulti.sendMessage(sessionId, msg, {
-                            text: `Session ${newSessionId} is Connected.`
+                client.on('connected', (_, newSessionId) => {
+                    if (newSessionId === newSessionIdVar) {
+                        client.sendMessage(sessionId, msg, {
+                            text: `Session ${newSessionIdVar} is Connected.`,
                         });
                     }
                 });
                 break;
 
-            case "delete":
+            case 'delete':
                 // Delete an existing session
-                sessionId = text.split(" ")[1] || "session-1";
-                WhatsMulti.deleteSession(sessionId);
-                WhatsMulti.sendMessage(sessionId, msg, {
-                    text: `Session ${sessionId} has been deleted.`
+                sessionId = text.split(' ')[1] || 'session-1';
+                client.deleteSession(sessionId);
+                client.sendMessage(sessionId, msg, {
+                    text: `Session ${sessionId} has been deleted.`,
+                });
+                break;
+
+            case 'send':
+                // Send a message to a specific session
+                sessionId = text.split(' ')[1] || 'session-1';
+                const message = text.split(' ').slice(2).join(' ');
+                client.sendMessage(sessionId, msg, {
+                    text: message,
                 });
                 break;
         }
     });
-}
+};
 
 // Start the example
 start();

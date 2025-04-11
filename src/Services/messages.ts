@@ -1,6 +1,6 @@
-import { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from "@whiskeysockets/baileys";
-import { logger } from "../Utils/logger";
-import { getSession } from "./sessions";
+import { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from '@whiskeysockets/baileys';
+import { logger } from '../Utils/logger';
+import { getSession } from './sessions';
 
 export const sendMessage = async (
     sessionId: string,
@@ -9,6 +9,7 @@ export const sendMessage = async (
     options?: MiscMessageGenerationOptions
 ) => {
     const session = getSession(sessionId);
+
     if (!session) return logger.error(`Session ${sessionId} does not exist`);
 
     let jid: string;

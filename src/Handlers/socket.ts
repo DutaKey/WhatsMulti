@@ -1,10 +1,10 @@
 import QRCode from 'qrcode';
-import { DisconnectReason } from "@whiskeysockets/baileys";
+import { DisconnectReason } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
-import { EventHandlerType, EventMapKey } from "../Types/Event";
-import { events, sessions } from "../Stores";
-import { createSession, deleteSession } from "../Services";
-import { SessionStatusType } from "../Types/Session";
+import { EventHandlerType, EventMapKey } from '../Types/Event';
+import { events, sessions } from '../Stores';
+import { createSession, deleteSession } from '../Services/sessions';
+import { SessionStatusType } from '../Types/Session';
 
 export const handleSocketEvents = ({ sessionId, eventMap, sock, saveCreds }: EventHandlerType) => {
     Object.entries(eventMap).forEach(([key, data]) => {
@@ -13,14 +13,13 @@ export const handleSocketEvents = ({ sessionId, eventMap, sock, saveCreds }: Eve
     });
 };
 
-
 const handleConnectionUpdate = ({ eventValue, sessionId }): void => {
     const { connection, lastDisconnect, qr } = eventValue;
     const session = sessions.get(sessionId);
 
     if (qr) {
-        QRCode.toDataURL(qr).then(qrUrl => {
-            events.get("qr")?.({ image: qrUrl, qr }, sessionId);
+        QRCode.toDataURL(qr).then((qrUrl: String) => {
+            events.get('qr')?.({ image: qrUrl, qr }, sessionId);
         });
     } else if (connection) {
         updateSessionStatus(sessionId, connection as SessionStatusType);
@@ -28,7 +27,7 @@ const handleConnectionUpdate = ({ eventValue, sessionId }): void => {
         const isLoggedOut = (lastDisconnect?.error as Boom)?.output?.statusCode === DisconnectReason.loggedOut;
         if (connection === 'close') {
             if (!isLoggedOut && session) {
-                createSession(sessionId, session.connectionType, session.meta.socketConfig ,session.meta.options);
+                createSession(sessionId, session.connectionType, session.meta.socketConfig, session.meta.options);
             } else {
                 deleteSession(sessionId);
                 events.get('disconnected')?.({}, sessionId);
@@ -39,15 +38,15 @@ const handleConnectionUpdate = ({ eventValue, sessionId }): void => {
             events.get('connected')?.({}, sessionId);
         }
     }
-}
+};
 
 const handleCredsUpdate = ({ saveCreds }) => {
     saveCreds();
-}
+};
 
 const eventHandlers: { [key: string]: Function } = {
-    "creds.update": handleCredsUpdate,
-    "connection.update": handleConnectionUpdate,
+    'creds.update': handleCredsUpdate,
+    'connection.update': handleConnectionUpdate,
 };
 
 const updateSessionStatus = (sessionId: string, status: SessionStatusType): void => {
@@ -55,4 +54,4 @@ const updateSessionStatus = (sessionId: string, status: SessionStatusType): void
     if (session) {
         session.status = status;
     }
-}
+};

@@ -1,9 +1,3 @@
-import * as Handlers from "./Handlers";
-import * as Services from "./Services";
-
-const WhatsMulti = {
-  ...Handlers,
-  ...Services,
-};
+import { WhatsMulti } from './Services';
 
 export default WhatsMulti;
