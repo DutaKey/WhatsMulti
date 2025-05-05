@@ -6,7 +6,6 @@ import { handleSocketEvents } from '../Handlers/socket';
 import { EventMap } from '../Types/Event';
 import { ConnectionType } from '../Types/Connection';
 import { CreateSessionOptionsType, SockConfig } from '../Types/Session';
-import { connectToMongo, isMongoDBConnected } from '../Utils/mongo-client';
 
 export const createSession = async (
     sessionId: string,

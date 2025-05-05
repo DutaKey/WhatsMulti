@@ -5,7 +5,7 @@ import { useMongoAuthState } from './use-mongo-auth-state';
 import { connectToMongo, isMongoDBConnected } from './mongo-client';
 import path from 'path';
 
-export const authState = async ({ sessionId, connectionType }: AuthStateType): Promise<any> => {
+export const authState = async ({ sessionId, connectionType }: AuthStateType): Promise<> => {
     const sessionPath = path.resolve(LOCAL_CONNECTION_PATH, sessionId);
 
     if (connectionType === 'local') {

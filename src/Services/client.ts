@@ -6,7 +6,6 @@ import { CreateSessionOptionsType, SockConfig } from '../Types/Session';
 import { AnyMessageContent, MiscMessageGenerationOptions, WAMessage, WASocket } from '@whiskeysockets/baileys';
 import { EventMap, EventMapKey } from '../Types/Event';
 import { Configs } from '../Stores';
-import { preCheck } from '../Utils/pre-check';
 
 class WhatsMulti {
     constructor(config: ConfigType) {
@@ -42,7 +41,7 @@ class WhatsMulti {
 
     // Events Function
 
-    on = <K extends EventMapKey>(eventKey: K, e: (data: EventMap[K], sessionId: string, sock: WASocket) => any) =>
+    on = <K extends EventMapKey>(eventKey: K, e: (data: EventMap[K], sessionId: string, sock: WASocket) => void) =>
         events.on(eventKey, e);
 }
 

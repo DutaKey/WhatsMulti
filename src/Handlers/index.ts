@@ -4,7 +4,7 @@ import { EventMap, EventMapKey } from '../Types/Event';
 
 export const on = <K extends EventMapKey>(
     eventKey: K,
-    e: (data: EventMap[K], sessionId: string, sock: WASocket) => any
+    e: (data: EventMap[K], sessionId: string, sock: WASocket) => void
 ) => {
     events.set(eventKey, e);
 };

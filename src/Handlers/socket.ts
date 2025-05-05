@@ -18,7 +18,7 @@ const handleConnectionUpdate = ({ eventValue, sessionId }): void => {
     const session = sessions.get(sessionId);
 
     if (qr) {
-        QRCode.toDataURL(qr).then((qrUrl: String) => {
+        QRCode.toDataURL(qr).then((qrUrl: string) => {
             events.get('qr')?.({ image: qrUrl, qr }, sessionId);
         });
     } else if (connection) {
@@ -44,7 +44,7 @@ const handleCredsUpdate = ({ saveCreds }) => {
     saveCreds();
 };
 
-const eventHandlers: { [key: string]: Function } = {
+const eventHandlers = {
     'creds.update': handleCredsUpdate,
     'connection.update': handleConnectionUpdate,
 };

@@ -3,7 +3,7 @@ import { ConnectionType } from './Connection';
 
 export type SessionStatusType = WAConnectionState;
 
-export type CreateSessionOptionsType = {};
+export type CreateSessionOptionsType = object;
 
 export type LoggerLevel = 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 

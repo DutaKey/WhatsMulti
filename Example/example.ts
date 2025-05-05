@@ -26,25 +26,26 @@ const start = async () => {
         const command = text.split(' ')[0]; // Extract command from message
 
         switch (command) {
-            case 'status':
-                // Get and send the session status
+            case 'status': {
                 const status = client.getSessionStatus(sessionId);
                 client.sendMessage(sessionId, msg, {
                     text: `Status: ${sessionId} is ${status}`,
                 });
                 break;
+            }
 
-            case 'allsessions':
+            case 'allsessions': {
                 // List all active sessions
                 const sessions = client.getSessions();
                 client.sendMessage(sessionId, msg, {
                     text: `Total Sessions: ${sessions.length}\n${sessions.join('\n')}`,
                 });
                 break;
+            }
 
-            case 'create':
+            case 'create': {
                 // Create a new session dynamically
-                let newSessionIdVar = text.split(' ')[1] || 'session-2';
+                const newSessionIdVar = text.split(' ')[1] || 'session-2';
                 client.createSession(newSessionIdVar, 'local', {
                     printQRInTerminal: false,
                 });
@@ -70,8 +71,9 @@ const start = async () => {
                     }
                 });
                 break;
+            }
 
-            case 'delete':
+            case 'delete': {
                 // Delete an existing session
                 sessionId = text.split(' ')[1] || 'session-1';
                 client.deleteSession(sessionId);
@@ -79,8 +81,9 @@ const start = async () => {
                     text: `Session ${sessionId} has been deleted.`,
                 });
                 break;
+            }
 
-            case 'send':
+            case 'send': {
                 // Send a message to a specific session
                 sessionId = text.split(' ')[1] || 'session-1';
                 const message = text.split(' ').slice(2).join(' ');
@@ -88,6 +91,7 @@ const start = async () => {
                     text: message,
                 });
                 break;
+            }
         }
     });
 };

@@ -1,15 +1,20 @@
 import { BufferJSON, initAuthCreds, proto } from '@whiskeysockets/baileys';
 import { mongoose } from './mongo-client';
 
-let AuthenticationStateModel: mongoose.Model<any>;
+interface AuthStateDocument {
+    _id: string;
+    data: string;
+}
+
+let AuthenticationStateModel: mongoose.Model<AuthStateDocument>;
 
 const useMongoAuthState = async (sessionId: string) => {
     if (!AuthenticationStateModel) {
         const schema = new mongoose.Schema({
-            _id: String,
+            _id: { type: String, required: true },
             data: String,
         });
-        AuthenticationStateModel = mongoose.model(sessionId, schema);
+        AuthenticationStateModel = mongoose.model<AuthStateDocument>(sessionId, schema);
     }
 
     const fixFileName = (file: string) => file.replace(/\//g, '__').replace(/:/g, '-');
@@ -46,8 +51,8 @@ const useMongoAuthState = async (sessionId: string) => {
                     );
                     return Object.fromEntries(entries);
                 },
-                set: async (data: Record<string, Record<string, any>>) => {
-                    const tasks: Promise<any>[] = [];
+                set: async (data: Record<string, Record<string, unknown>>) => {
+                    const tasks: Promise<unknown>[] = [];
                     for (const [category, items] of Object.entries(data)) {
                         for (const [id, value] of Object.entries(items)) {
                             const file = `${category}-${id}`;
