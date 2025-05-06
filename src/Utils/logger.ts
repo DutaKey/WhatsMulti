@@ -1,5 +1,4 @@
 import pino from 'pino';
-import { LoggerLevel } from '../Types/Session';
 
 const logger = pino({
     transport: {
@@ -13,7 +12,8 @@ const logger = pino({
     timestamp: () => `,"time":"${new Date().toJSON()}"`,
 });
 
-const baileysLogger = (level: LoggerLevel = 'silent') =>
-    pino({ level, timestamp: () => `,"time":"${new Date().toJSON()}"` });
+const baileysLogger = pino({
+    level: 'silent',
+});
 
 export { logger, baileysLogger };
