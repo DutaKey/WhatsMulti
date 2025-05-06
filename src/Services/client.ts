@@ -8,7 +8,7 @@ import { EventMap, EventMapKey } from '../Types/Event';
 import { Configs } from '../Stores';
 
 class WhatsMulti {
-    constructor(config: ConfigType) {
+    constructor(config: ConfigType = {}) {
         Configs.set(config);
     }
 
