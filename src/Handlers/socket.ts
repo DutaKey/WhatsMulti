@@ -6,8 +6,21 @@ import { events, sessions } from '../Stores';
 import { createSession, deleteSession } from '../Services/sessions';
 import { SessionStatusType } from '../Types/Session';
 import { updateSessionStatus } from '../Utils';
+import { logger } from '../Utils/logger';
+import { processCallbacks } from '.';
 
 export const handleSocketEvents = ({ sessionId, eventMap, sock, saveCreds }: EventHandlerType) => {
+    for (const cb of processCallbacks) {
+        try {
+            const res = cb(eventMap, sessionId, sock);
+            if (res && typeof (res as Promise<void>).catch === 'function') {
+                (res as Promise<void>).catch(logger.error);
+            }
+        } catch (err) {
+            logger.error(err);
+        }
+    }
+
     Object.entries(eventMap).forEach(([key, data]) => {
         events.get(key as EventMapKey)?.(data, sessionId, sock);
         eventHandlers[key]?.({ eventValue: data, sessionId, sock, saveCreds });

@@ -30,6 +30,7 @@ class WhatsMulti {
     getSessionStatus = (sessionId: string) => sessions.getSessionStatus(sessionId);
 
     deleteSession = (sessionId: string) => sessions.deleteSession(sessionId);
+
     // Message Function
 
     sendMessage = (
@@ -43,6 +44,8 @@ class WhatsMulti {
 
     on = <K extends EventMapKey>(eventKey: K, e: (data: EventMap[K], sessionId: string, sock: WASocket) => void) =>
         events.on(eventKey, e);
+
+    process = (cb: (events: EventMap, sessionId: string, sock: WASocket) => void | Promise<void>) => events.process(cb);
 }
 
 export { WhatsMulti };
