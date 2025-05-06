@@ -5,6 +5,7 @@ import { EventHandlerType, EventMapKey } from '../Types/Event';
 import { events, sessions } from '../Stores';
 import { createSession, deleteSession } from '../Services/sessions';
 import { SessionStatusType } from '../Types/Session';
+import { updateSessionStatus } from '../Utils';
 
 export const handleSocketEvents = ({ sessionId, eventMap, sock, saveCreds }: EventHandlerType) => {
     Object.entries(eventMap).forEach(([key, data]) => {
@@ -26,7 +27,7 @@ const handleConnectionUpdate = ({ eventValue, sessionId }): void => {
 
         const isLoggedOut = (lastDisconnect?.error as Boom)?.output?.statusCode === DisconnectReason.loggedOut;
         if (connection === 'close') {
-            if (!isLoggedOut && session) {
+            if (!session?.force_close && !isLoggedOut && session) {
                 createSession(sessionId, session.connectionType, session.meta.socketConfig, session.meta.options);
             } else {
                 deleteSession(sessionId);
@@ -47,11 +48,4 @@ const handleCredsUpdate = ({ saveCreds }) => {
 const eventHandlers = {
     'creds.update': handleCredsUpdate,
     'connection.update': handleConnectionUpdate,
-};
-
-const updateSessionStatus = (sessionId: string, status: SessionStatusType): void => {
-    const session = sessions.get(sessionId);
-    if (session) {
-        session.status = status;
-    }
 };
