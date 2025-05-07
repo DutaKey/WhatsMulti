@@ -1,10 +1,10 @@
 import { BaileysEventMap, WASocket } from '@whiskeysockets/baileys';
 
 export type EventMap = BaileysEventMap & {
-    qr: { image: String; qr: string };
-    connected: {};
-    disconnected: {};
-    connecting: {};
+    qr: { image: string; qr: string };
+    connected: object;
+    disconnected: object;
+    connecting: object;
 };
 
 export type EventMapKey = keyof EventMap;

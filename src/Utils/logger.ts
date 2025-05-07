@@ -1,7 +1,8 @@
 import pino from 'pino';
-import { LoggerLevel } from '../Types/Session';
+import { Configs } from '../Stores';
 
 const logger = pino({
+    level: Configs.getValue('LoggerLevel') || 'info',
     transport: {
         target: 'pino-pretty',
         options: {
@@ -13,7 +14,8 @@ const logger = pino({
     timestamp: () => `,"time":"${new Date().toJSON()}"`,
 });
 
-const baileysLogger = (level: LoggerLevel = 'silent') =>
-    pino({ level, timestamp: () => `,"time":"${new Date().toJSON()}"` });
+const baileysLogger = pino({
+    level: 'silent',
+});
 
 export { logger, baileysLogger };

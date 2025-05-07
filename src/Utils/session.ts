@@ -4,7 +4,8 @@ import { LOCAL_CONNECTION_PATH } from '../Defaults';
 import { getSession } from '../Services/sessions';
 import { logger } from './logger';
 import { connectToMongo, isMongoDBConnected, mongoose } from './mongo-client';
-import { Configs } from '../Stores';
+import { Configs, sessions } from '../Stores';
+import { SessionStatusType } from '../Types/Session';
 
 export const isSessionRunning = (sessionId: string) => {
     return getSession(sessionId)?.status === 'open';
@@ -17,6 +18,13 @@ export const isSessionExist = (sessionId: string) => {
 const checkSessionOnLocal = (sessionId: string) => {
     const sessionPath = path.join(LOCAL_CONNECTION_PATH, sessionId);
     return fs.existsSync(sessionPath) && fs.lstatSync(sessionPath).isDirectory();
+};
+
+export const updateSessionStatus = (sessionId: string, status: SessionStatusType): void => {
+    const session = sessions.get(sessionId);
+    if (session) {
+        session.status = status;
+    }
 };
 
 export const deleteSessionOnLocal = (sessionId: string) => {

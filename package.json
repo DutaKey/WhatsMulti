@@ -5,6 +5,15 @@
     "author": "DutaKey",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "semantic-release": "semantic-release",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "prettier": "prettier --check .",
+        "prettier:fix": "prettier --write .",
+        "prepublish-check": "bun run build && bun run lint:fix && bun run prettier:fix"
+    },
     "files": [
         "lib/*",
         "README.md"
@@ -14,19 +23,19 @@
     },
     "dependencies": {
         "@whiskeysockets/baileys": "^6.7.16",
-        "mongoose": "^8.13.2",
+        "mongoose": "^8.14.1",
         "pino": "^7.11.0",
         "pino-pretty": "^13.0.0",
         "qrcode": "^1.5.4",
         "qrcode-terminal": "^0.12.0"
     },
     "devDependencies": {
+        "@eslint/js": "^9.26.0",
+        "eslint": "^9.26.0",
+        "globals": "^16.0.0",
         "semantic-release": "^24.2.3",
-        "typescript": "^5.8.3"
-    },
-    "scripts": {
-        "build": "tsc",
-        "semantic-release": "semantic-release"
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.31.1"
     },
     "repository": {
         "type": "git",

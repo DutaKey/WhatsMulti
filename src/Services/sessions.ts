@@ -1,16 +1,23 @@
 import makeWASocket, { fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
-import { authState, deleteSessionOnLocal, deleteSessionOnMongo, isSessionExist, isSessionRunning } from '../Utils';
+import {
+    authState,
+    deleteSessionOnLocal,
+    deleteSessionOnMongo,
+    isSessionExist,
+    isSessionRunning,
+    updateSessionStatus,
+} from '../Utils';
 import { baileysLogger, logger } from '../Utils/logger';
 import { Configs, sessions } from '../Stores';
 import { handleSocketEvents } from '../Handlers/socket';
 import { EventMap } from '../Types/Event';
 import { ConnectionType } from '../Types/Connection';
 import { CreateSessionOptionsType, SockConfig } from '../Types/Session';
-import { connectToMongo, isMongoDBConnected } from '../Utils/mongo-client';
+import { getSocketConfig } from '../Utils/socket';
 
 export const createSession = async (
     sessionId: string,
-    connectionType: ConnectionType,
+    connectionType: ConnectionType = Configs.getValue('defaultConnectionType') || 'local',
     socketConfig: Partial<SockConfig> = {},
     options?: CreateSessionOptionsType
 ) => {
@@ -20,6 +27,8 @@ export const createSession = async (
         if (connectionType === 'mongodb' && !Configs.getValue('mongoUri'))
             return logger.error('Mongo URI is not defined');
 
+        socketConfig = getSocketConfig(socketConfig);
+        const timeout = socketConfig.disableQRRetry ? socketConfig.qrTimeout : socketConfig.qrMaxWaitMs;
         const { version } = await fetchLatestBaileysVersion();
         const { state, saveCreds } = await authState({
             sessionId,
@@ -29,13 +38,7 @@ export const createSession = async (
         const sock = makeWASocket({
             version,
             auth: state,
-            logger: baileysLogger(socketConfig.loggerLevel ?? 'silent'),
-            printQRInTerminal: socketConfig.printQRInTerminal ?? true,
-            connectTimeoutMs: socketConfig.connectTimeoutMs ?? 30000,
-            keepAliveIntervalMs: socketConfig.keepAliveIntervalMs ?? 60000,
-            emitOwnEvents: socketConfig.emitOwnEvents ?? true,
-            fireInitQueries: socketConfig.fireInitQueries ?? true,
-            qrTimeout: socketConfig.qrTimeout ?? 60000,
+            logger: baileysLogger,
             ...socketConfig,
         });
 
@@ -58,7 +61,19 @@ export const createSession = async (
                 saveCreds,
             });
         });
+
+        setTimeout(async () => {
+            const session = getSession(sessionId);
+            if (session?.status === 'connecting') {
+                updateSessionStatus(sessionId, 'close');
+                session.force_close = true;
+                logger.error(`Session ${sessionId} timed out after ${timeout}ms`);
+                return await sock.ws.close();
+            }
+            if (session) delete session.force_close;
+        }, timeout);
     } catch (e) {
+        updateSessionStatus(sessionId, 'close');
         logger.error(e);
     }
 };
