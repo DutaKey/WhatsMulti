@@ -17,7 +17,7 @@ import { getSocketConfig } from '../Utils/socket';
 
 export const createSession = async (
     sessionId: string,
-    connectionType: ConnectionType,
+    connectionType: ConnectionType = Configs.getValue('defaultConnectionType') || 'local',
     socketConfig: Partial<SockConfig> = {},
     options?: CreateSessionOptionsType
 ) => {

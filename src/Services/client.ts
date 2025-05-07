@@ -16,7 +16,7 @@ class WhatsMulti {
 
     async createSession(
         sessionId: string,
-        connectionType: ConnectionType,
+        connectionType?: ConnectionType,
         socketConfig: Partial<SockConfig> = {},
         options?: CreateSessionOptionsType
     ) {
