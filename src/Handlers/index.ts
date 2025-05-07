@@ -15,11 +15,3 @@ export const on = <K extends EventMapKey>(
 export const process = (cb: (events: EventMap, sessionId: string, sock: WASocket) => void | Promise<void>) => {
     processCallbacks.push(cb);
 };
-
-// export const process = (
-//     e: (data: EventMap[EventMapKey], sessionId: string, sock: WASocket) => any
-// ) => {
-//     (Object.keys(events) as EventMapKey[]).forEach((eventKey) => {
-//         events.set(eventKey, e);
-//     });
-// };
