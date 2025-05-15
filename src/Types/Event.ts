@@ -13,5 +13,4 @@ export type EventHandlerType = {
     sessionId: string;
     eventMap: EventMap;
     sock: WASocket;
-    saveCreds: () => void;
 };
