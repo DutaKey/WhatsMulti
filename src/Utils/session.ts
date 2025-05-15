@@ -11,13 +11,21 @@ export const isSessionRunning = (sessionId: string) => {
     return getSession(sessionId)?.status === 'open';
 };
 
-export const isSessionExist = (sessionId: string) => {
-    return checkSessionOnLocal(sessionId);
+export const isSessionExist = async (sessionId: string) => {
+    return checkSessionOnLocal(sessionId) || (await checkSessionOnMongo(sessionId));
 };
 
 const checkSessionOnLocal = (sessionId: string) => {
     const sessionPath = path.join(LOCAL_CONNECTION_PATH, sessionId);
     return fs.existsSync(sessionPath) && fs.lstatSync(sessionPath).isDirectory();
+};
+
+const checkSessionOnMongo = async (sessionId: string) => {
+    if (!isMongoDBConnected()) await connectToMongo();
+    if (!mongoose.connection.db) return false;
+    const sessionCollection = mongoose.connection.db.collection(sessionId);
+    const sessionExists = await sessionCollection.findOne({}).then((res) => !!res);
+    return sessionExists;
 };
 
 export const updateSessionStatus = (sessionId: string, status: SessionStatusType): void => {

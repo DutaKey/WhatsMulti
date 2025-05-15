@@ -45,8 +45,9 @@ class WhatsMulti {
      * const session = client.getSession('session1');
      * console.log(session);
      */
-    getSession = (sessionId: string) => sessions.getSession(sessionId);
-
+    getSession(sessionId: string) {
+        return sessions.getSession(sessionId);
+    }
     /**
      * Gets all sessions.
      *
@@ -56,8 +57,9 @@ class WhatsMulti {
      * const sessions = client.getSessions();
      * console.log(sessions);
      */
-    getSessions = () => sessions.getSessions();
-
+    getSessions() {
+        return sessions.getSessions();
+    }
     /**
      * Gets the status of a session.
      *
@@ -68,8 +70,9 @@ class WhatsMulti {
      * const status = client.getSessionStatus('session1');
      * console.log(status);
      */
-    getSessionStatus = (sessionId: string) => sessions.getSessionStatus(sessionId);
-
+    getSessionStatus(sessionId: string) {
+        return sessions.getSessionStatus(sessionId);
+    }
     /**
      * Deletes a session.
      *
@@ -78,8 +81,9 @@ class WhatsMulti {
      * @example
      * await client.deleteSession('session1');
      */
-    deleteSession = (sessionId: string) => sessions.deleteSession(sessionId);
-
+    deleteSession(sessionId: string) {
+        return sessions.deleteSession(sessionId);
+    }
     // Message Function
 
     /**
@@ -94,13 +98,14 @@ class WhatsMulti {
      * @example
      * await client.sendMessage('session1', '628123456789', { text: 'Hello' });
      */
-    sendMessage = (
+    sendMessage(
         sessionId: string,
         recipient: string | WAMessage,
         message: AnyMessageContent,
         options?: MiscMessageGenerationOptions
-    ) => messages.sendMessage(sessionId, recipient, message, options);
-
+    ) {
+        return messages.sendMessage(sessionId, recipient, message, options);
+    }
     // Events Function
 
     /**
