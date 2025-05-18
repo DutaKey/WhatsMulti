@@ -8,10 +8,10 @@ const logger = pino({
         options: {
             colorize: true,
             ignore: 'pid,hostname',
+            messageFormat: ' [WhatsMulti] {msg}',
             customColors: 'error:red,warn:yellow,info:blue,debug:green',
         },
     },
-    timestamp: () => `,"time":"${new Date().toJSON()}"`,
 });
 
 const baileysLogger = pino({
