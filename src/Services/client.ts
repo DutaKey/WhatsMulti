@@ -136,7 +136,9 @@ class WhatsMulti {
      *   console.log(`Events from ${sessionId}:`, events);
      * });
      */
-    process = (cb: (events: EventMap, sessionId: string, sock: WASocket) => void | Promise<void>) => events.process(cb);
+    process = <K extends EventMapKey>(
+        cb: (events: EventMap[K], eventKey: K, sessionId: string, sock: WASocket) => void | Promise<void>
+    ) => events.process(cb);
 }
 
 export { WhatsMulti };

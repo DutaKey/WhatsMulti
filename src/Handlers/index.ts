@@ -2,8 +2,14 @@ import { WASocket } from '@whiskeysockets/baileys';
 import { events } from '../Stores';
 import { EventMap, EventMapKey } from '../Types/Event';
 
-export const processCallbacks: Array<(events: EventMap, sessionId: string, sock: WASocket) => void | Promise<void>> =
-    [];
+type ProcessCallback<K extends EventMapKey = EventMapKey> = (
+    data: EventMap[K],
+    eventKey: K,
+    sessionId: string,
+    sock: WASocket
+) => void | Promise<void>;
+
+export const processCallbacks: ProcessCallback[] = [];
 
 export const on = <K extends EventMapKey>(
     eventKey: K,
@@ -12,6 +18,8 @@ export const on = <K extends EventMapKey>(
     events.set(eventKey, e);
 };
 
-export const process = (cb: (events: EventMap, sessionId: string, sock: WASocket) => void | Promise<void>) => {
+export const process = <K extends EventMapKey>(
+    cb: (events: EventMap[K], eventKey: K, sessionId: string, sock: WASocket) => void | Promise<void>
+) => {
     processCallbacks.push(cb);
 };

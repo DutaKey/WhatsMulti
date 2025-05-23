@@ -6,7 +6,10 @@ import { processCallbacks } from '.';
 export const handleSocketEvents = ({ sessionId, eventMap, sock }: EventHandlerType) => {
     for (const cb of processCallbacks) {
         try {
-            const res = cb(eventMap, sessionId, sock);
+            const eventKey = Object.keys(eventMap)[0] as EventMapKey;
+            const eventData = eventMap[eventKey];
+            const res = cb(eventData, eventKey, sessionId, sock);
+
             if (res && typeof (res as Promise<void>).catch === 'function') {
                 (res as Promise<void>).catch(logger.error);
             }
