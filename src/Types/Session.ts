@@ -10,6 +10,7 @@ export type LoggerLevel = 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debu
 export type SockConfig = SocketConfig & {
     disableQRRetry?: boolean;
     qrMaxWaitMs?: number;
+    printQR?: boolean;
 };
 
 export type SessionStoreType = {
@@ -20,7 +21,7 @@ export type SessionStoreType = {
     force_close?: boolean;
 };
 
-type MetaSessionStoreType = {
+export type MetaSessionStoreType = {
     socketConfig?: Partial<SockConfig>;
     options?: CreateSessionOptionsType;
     createdAt?: Date;

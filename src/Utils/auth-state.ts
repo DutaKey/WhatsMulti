@@ -5,6 +5,8 @@ import { useLocalAuthState } from './use-local-auth-state';
 import { useMongoAuthState } from './use-mongo-auth-state';
 import { connectToMongo, isMongoDBConnected } from './mongo-client';
 import path from 'path';
+import { MetaSessionStoreType } from '../Types';
+import { UpdateWriteOpResult } from 'mongoose';
 
 export const authState = async ({
     sessionId,
@@ -12,6 +14,8 @@ export const authState = async ({
 }: AuthStateType): Promise<{
     state: AuthenticationState;
     saveCreds: () => Promise<void>;
+    setMeta: (value: MetaSessionStoreType) => Promise<void | UpdateWriteOpResult>;
+    getMeta: () => Promise<MetaSessionStoreType | null>;
 }> => {
     const sessionDir = path.resolve(LOCAL_CONNECTION_PATH, sessionId);
 

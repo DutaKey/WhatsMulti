@@ -1,39 +1,50 @@
-import { BufferJSON, initAuthCreds, proto } from '@whiskeysockets/baileys';
+import { AuthenticationCreds, AuthenticationState, BufferJSON, initAuthCreds, proto } from '@whiskeysockets/baileys';
 import { mongoose } from './mongo-client';
+import { UpdateWriteOpResult } from 'mongoose';
+import { MetaSessionStoreType } from '../Types';
 
 interface AuthStateDocument {
     _id: string;
     data: string;
 }
 
-let AuthenticationStateModel: mongoose.Model<AuthStateDocument>;
+let AuthStateModel: mongoose.Model<AuthStateDocument>;
 
-const useMongoAuthState = async (sessionId: string) => {
-    if (!AuthenticationStateModel) {
-        const schema = new mongoose.Schema({
+const useMongoAuthState = async (
+    sessionId: string
+): Promise<{
+    state: AuthenticationState;
+    saveCreds: () => Promise<void>;
+    setMeta: (value: MetaSessionStoreType) => Promise<UpdateWriteOpResult>;
+    getMeta: () => Promise<MetaSessionStoreType | null>;
+}> => {
+    if (!AuthStateModel) {
+        const schema = new mongoose.Schema<AuthStateDocument>({
             _id: { type: String, required: true },
             data: String,
         });
-        AuthenticationStateModel = mongoose.model<AuthStateDocument>(sessionId, schema);
+        AuthStateModel = mongoose.model<AuthStateDocument>(`auth-${sessionId}`, schema);
     }
 
-    const fixFileName = (file: string) => file.replace(/\//g, '__').replace(/:/g, '-');
+    const key = (file: string) => file.replace(/\//g, '__').replace(/:/g, '-');
 
-    const writeData = async (data: unknown, file: string) =>
-        AuthenticationStateModel.updateOne(
-            { _id: fixFileName(file) },
-            { $set: { data: JSON.stringify(data, BufferJSON.replacer) } },
+    const store = async (id: string, value: unknown) =>
+        AuthStateModel.updateOne(
+            { _id: key(id) },
+            { $set: { data: JSON.stringify(value, BufferJSON.replacer) } },
             { upsert: true }
         );
 
-    const readData = async (file: string) => {
-        const doc = await AuthenticationStateModel.findOne({ _id: fixFileName(file) });
+    const load = async (id: string) => {
+        const doc = await AuthStateModel.findOne({ _id: key(id) });
         return doc ? JSON.parse(doc.data, BufferJSON.reviver) : null;
     };
 
-    const removeData = async (file: string) => AuthenticationStateModel.deleteOne({ _id: fixFileName(file) });
+    const remove = async (id: string) => {
+        await AuthStateModel.deleteOne({ _id: key(id) });
+    };
 
-    const creds = (await readData('creds')) ?? initAuthCreds();
+    const creds: AuthenticationCreds = (await load('creds')) ?? initAuthCreds();
 
     return {
         state: {
@@ -42,30 +53,31 @@ const useMongoAuthState = async (sessionId: string) => {
                 get: async (type, ids) => {
                     const entries = await Promise.all(
                         ids.map(async (id) => {
-                            let value = await readData(`${type}-${id}`);
-                            if (type === 'app-state-sync-key' && value) {
-                                value = proto.Message.AppStateSyncKeyData.fromObject(value);
+                            let data = await load(`${type}-${id}`);
+                            if (type === 'app-state-sync-key' && data) {
+                                data = proto.Message.AppStateSyncKeyData.fromObject(data);
                             }
-                            return [id, value];
+                            return [id, data];
                         })
                     );
                     return Object.fromEntries(entries);
                 },
-                set: async (data: Record<string, Record<string, unknown>>) => {
-                    const tasks: Promise<unknown>[] = [];
-                    for (const [category, items] of Object.entries(data)) {
-                        for (const [id, value] of Object.entries(items)) {
-                            const file = `${category}-${id}`;
-                            tasks.push(value ? writeData(value, file) : removeData(file));
-                        }
-                    }
+                set: async (allKeys) => {
+                    const tasks = Object.entries(allKeys).flatMap(([type, records]) =>
+                        Object.entries(records as Record<string, unknown>).map(([id, value]) =>
+                            value ? store(`${type}-${id}`, value) : remove(`${type}-${id}`)
+                        )
+                    );
                     await Promise.all(tasks);
                 },
             },
         },
         saveCreds: async () => {
-            await writeData(creds, 'creds');
+            await store('creds', creds);
         },
+
+        setMeta: async (value) => store(`meta`, value),
+        getMeta: async () => load('meta'),
     };
 };
 
