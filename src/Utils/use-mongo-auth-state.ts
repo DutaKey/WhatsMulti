@@ -1,14 +1,7 @@
 import { AuthenticationCreds, AuthenticationState, BufferJSON, initAuthCreds, proto } from '@whiskeysockets/baileys';
-import { mongoose } from './mongo-client';
+import { getAuthModel } from './mongo-client';
 import { UpdateWriteOpResult } from 'mongoose';
 import { MetaSessionStoreType } from '../Types';
-
-interface AuthStateDocument {
-    _id: string;
-    data: string;
-}
-
-let AuthStateModel: mongoose.Model<AuthStateDocument>;
 
 const useMongoAuthState = async (
     sessionId: string
@@ -18,13 +11,7 @@ const useMongoAuthState = async (
     setMeta: (value: MetaSessionStoreType) => Promise<UpdateWriteOpResult>;
     getMeta: () => Promise<MetaSessionStoreType | null>;
 }> => {
-    if (!AuthStateModel) {
-        const schema = new mongoose.Schema<AuthStateDocument>({
-            _id: { type: String, required: true },
-            data: String,
-        });
-        AuthStateModel = mongoose.model<AuthStateDocument>(`auth-${sessionId}`, schema);
-    }
+    const AuthStateModel = await getAuthModel(sessionId);
 
     const key = (file: string) => file.replace(/\//g, '__').replace(/:/g, '-');
 
