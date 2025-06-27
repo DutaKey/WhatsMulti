@@ -14,15 +14,14 @@ export type SockConfig = SocketConfig & {
 };
 
 export type SessionStoreType = {
-    sock: WASocket;
-    status: SessionStatusType | 'close';
-    connectionType: ConnectionType;
-    meta: MetaSessionStoreType;
-    force_close?: boolean;
+    sock: WASocket | null;
+    status: SessionStatusType;
+    metadata: MetaSessionStoreType;
+    scanned?: boolean;
 };
 
 export type MetaSessionStoreType = {
-    socketConfig?: Partial<SockConfig>;
+    connectionType: ConnectionType;
+    socketConfig: Partial<SockConfig>;
     options?: CreateSessionOptionsType;
-    createdAt?: Date;
 };
