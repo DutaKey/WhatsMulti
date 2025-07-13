@@ -8,7 +8,7 @@ const fixName = (file: string) => file.replace(/\//g, '__').replace(/:/g, '-');
 const toPath = (dir: string, name: string) => join(dir, fixName(name) + '.json');
 
 const useLocalAuthState = async (
-    folder: string
+    sessionId: string
 ): Promise<{
     state: AuthenticationState;
     saveCreds: () => Promise<void>;
@@ -16,18 +16,18 @@ const useLocalAuthState = async (
     getMeta: () => Promise<MetaSessionStoreType | null>;
 }> => {
     const ensureDir = async () => {
-        const info = await stat(folder).catch(() => null);
-        if (info && !info.isDirectory()) throw new Error(`${folder} exists and is not a directory`);
-        if (!info) await mkdir(folder, { recursive: true });
+        const info = await stat(sessionId).catch(() => null);
+        if (info && !info.isDirectory()) throw new Error(`${sessionId} exists and is not a directory`);
+        if (!info) await mkdir(sessionId, { recursive: true });
     };
 
     const save = async (id: string, data: unknown) => {
-        await writeFile(toPath(folder, id), JSON.stringify(data, BufferJSON.replacer));
+        await writeFile(toPath(sessionId, id), JSON.stringify(data, BufferJSON.replacer));
     };
 
     const load = async (id: string) => {
         try {
-            const data = await readFile(toPath(folder, id), 'utf-8');
+            const data = await readFile(toPath(sessionId, id), 'utf-8');
             return JSON.parse(data, BufferJSON.reviver);
         } catch {
             return null;
@@ -36,7 +36,7 @@ const useLocalAuthState = async (
 
     const remove = async (id: string) => {
         try {
-            await unlink(toPath(folder, id));
+            await unlink(toPath(sessionId, id));
         } catch {
             // Ignore error if file does not exist
         }
