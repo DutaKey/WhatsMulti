@@ -15,7 +15,7 @@ const logger = pino({
 });
 
 const baileysLogger = pino({
-    level: 'silent',
+    level: Configs.getValue('BaileysLoggerLevel') || 'silent',
 });
 
 export { logger, baileysLogger };

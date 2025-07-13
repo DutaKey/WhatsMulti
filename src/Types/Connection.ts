@@ -2,7 +2,7 @@ import { AuthenticationState } from '@whiskeysockets/baileys';
 import { LoggerLevel, MetaSessionStoreType } from './Session';
 import { UpdateWriteOpResult } from 'mongoose';
 
-export type ConnectionType = 'local' | 'mongodb';
+export type ConnectionType = 'local' | 'mongodb' | 'memory';
 
 export type AuthStateParamsType = {
     sessionId: string;
@@ -12,6 +12,7 @@ export type ConfigType = {
     defaultConnectionType?: ConnectionType;
     localConnectionPath?: string;
     LoggerLevel?: LoggerLevel;
+    BaileysLoggerLevel?: LoggerLevel;
     mongoUri?: string;
 };
 
