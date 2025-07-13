@@ -1,7 +1,15 @@
 import { SocketConfig, WAConnectionState, WASocket } from '@whiskeysockets/baileys';
 import { ConnectionType } from './Connection';
+import { EventMap } from './Event';
 
 export type SessionStatusType = WAConnectionState;
+
+export interface SessionInstance {
+    id: string;
+    connectionType: ConnectionType;
+    status: SessionStatusType;
+    qr?: EventMap['qr'];
+}
 
 export type CreateSessionOptionsType = object;
 
@@ -20,8 +28,4 @@ export type SessionStoreType = {
     scanned?: boolean;
 };
 
-export type MetaSessionStoreType = {
-    connectionType: ConnectionType;
-    socketConfig: Partial<SockConfig>;
-    options?: CreateSessionOptionsType;
-};
+export type MetaSessionStoreType = Partial<SockConfig>;
