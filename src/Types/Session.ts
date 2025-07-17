@@ -1,7 +1,15 @@
 import { SocketConfig, WAConnectionState, WASocket } from '@whiskeysockets/baileys';
 import { ConnectionType } from './Connection';
+import { EventMap } from './Event';
 
 export type SessionStatusType = WAConnectionState;
+
+export interface SessionInstance {
+    id: string;
+    connectionType: ConnectionType;
+    status: SessionStatusType;
+    qr?: EventMap['qr'];
+}
 
 export type CreateSessionOptionsType = object;
 
@@ -10,18 +18,14 @@ export type LoggerLevel = 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debu
 export type SockConfig = SocketConfig & {
     disableQRRetry?: boolean;
     qrMaxWaitMs?: number;
+    printQR?: boolean;
 };
 
 export type SessionStoreType = {
-    sock: WASocket;
-    status: SessionStatusType | 'close';
-    connectionType: ConnectionType;
-    meta: MetaSessionStoreType;
-    force_close?: boolean;
+    sock: WASocket | null;
+    status: SessionStatusType;
+    metadata: MetaSessionStoreType;
+    scanned?: boolean;
 };
 
-type MetaSessionStoreType = {
-    socketConfig?: Partial<SockConfig>;
-    options?: CreateSessionOptionsType;
-    createdAt?: Date;
-};
+export type MetaSessionStoreType = Partial<SockConfig>;

@@ -3,22 +3,27 @@ import WhatsMulti from '../src';
 // Start the WhatsMulti example
 const start = async () => {
     const client = new WhatsMulti({
-        mongoUri: 'mongodb://localhost:27017/whatsmulti',
+        mongoUri: 'mongodb://localhost:27017/whatsmulti-db',
     });
 
     // Create the first session with local storage
-    await client.createSession('session-1', 'mongodb');
+    await client.createSession('session-1', 'mongodb', {
+        printQR: true, // Print QR code to console
+    });
+
+    // Start the session
+    await client.startSession('session-1');
 
     // Event listeners for session status changes
-    client.on('disconnected', (_, sessionId) => console.log(sessionId, 'is Disconnected.'));
-    client.on('connecting', (_, sessionId) => console.log(sessionId, 'is Connecting...'));
-    client.on('connected', (_, sessionId) => console.log(sessionId, 'is Connected.'));
+    client.on('close', (_, { sessionId }) => console.log(sessionId, 'is Disconnected.'));
+    client.on('connecting', (_, { sessionId }) => console.log(sessionId, 'is Connecting...'));
+    client.on('open', (_, { sessionId }) => console.log(sessionId, 'is Connected.'));
 
     // Listen for QR Code event and log it
     client.on('qr', (data) => console.log(data));
 
     // Listen for incoming messages
-    client.on('messages.upsert', (data, sessionId) => {
+    client.on('messages.upsert', async (data, { sessionId }) => {
         const msg = data.messages[0];
         if (msg.key.fromMe) return; // Ignore messages sent by the bot
 
@@ -27,7 +32,7 @@ const start = async () => {
 
         switch (command) {
             case 'status': {
-                const status = client.getSessionStatus(sessionId);
+                const status = await client.getSession(sessionId).then((s) => s?.status);
                 client.sendMessage(sessionId, msg, {
                     text: `Status: ${sessionId} is ${status}`,
                 });
@@ -36,7 +41,7 @@ const start = async () => {
 
             case 'allsessions': {
                 // List all active sessions
-                const sessions = client.getSessions();
+                const sessions = await client.getSessions();
                 client.sendMessage(sessionId, msg, {
                     text: `Total Sessions: ${sessions.length}\n${sessions.join('\n')}`,
                 });
@@ -47,11 +52,11 @@ const start = async () => {
                 // Create a new session dynamically
                 const newSessionIdVar = text.split(' ')[1] || 'session-2';
                 client.createSession(newSessionIdVar, 'local', {
-                    printQRInTerminal: false,
+                    printQR: false,
                 });
 
                 // Send QR code when it's generated
-                client.on('qr', (data, newSessionId) => {
+                client.on('qr', (data, { sessionId: newSessionId }) => {
                     if (newSessionId === newSessionIdVar) {
                         const base64Data = data.image.replace(/^data:image\/png;base64,/, '');
                         const buffer = Buffer.from(base64Data, 'base64');
@@ -63,7 +68,7 @@ const start = async () => {
                 });
 
                 // Notify when the session is connected
-                client.on('connected', (_, newSessionId) => {
+                client.on('open', (_, { sessionId: newSessionId }) => {
                     if (newSessionId === newSessionIdVar) {
                         client.sendMessage(sessionId, msg, {
                             text: `Session ${newSessionIdVar} is Connected.`,

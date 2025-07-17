@@ -1,26 +1,20 @@
-import { AnyMessageContent, MiscMessageGenerationOptions, WAMessage } from '@whiskeysockets/baileys';
-import { logger } from '../Utils/logger';
-import { getSession } from './sessions';
+import { getJid } from '../Utils/messages';
+import { MessageOptionsType } from '../Types';
+import { MessageContentType, MessageType } from '../Types';
+import { SocketType } from '../Types/Socket';
 
-export const sendMessage = async (
-    sessionId: string,
-    recipient: string | WAMessage,
-    message: AnyMessageContent,
-    options?: MiscMessageGenerationOptions
-) => {
-    const session = getSession(sessionId);
-
-    if (!session) return logger.error(`Session ${sessionId} does not exist`);
-
-    let jid: string;
-
-    if (typeof recipient === 'string') {
-        jid = recipient.includes('@') ? recipient : `${recipient}@s.whatsapp.net`;
-    } else if (recipient.key?.remoteJid) {
-        jid = recipient.key.remoteJid;
-    } else {
-        return logger.error('Invalid recipient format');
+export class MessageService {
+    async send(
+        socket: SocketType,
+        recipient: string | MessageType,
+        message: MessageContentType,
+        options?: MessageOptionsType
+    ) {
+        try {
+            const jid = getJid(recipient);
+            await socket.sendMessage(jid, message, options);
+        } catch (error) {
+            throw new Error(`Failed to send message: ${error.message}`);
+        }
     }
-
-    await session.sock.sendMessage(jid, message, options);
-};
+}

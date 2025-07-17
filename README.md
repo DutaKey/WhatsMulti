@@ -26,7 +26,7 @@ yarn add @dutakey/whatsmulti
 
 ## 📂 Examples
 
-Check the [`example`](./Example/example.ts) folder for usage examples.
+Check the [`example`](./example/example.ts) folder for usage examples.
 
 ## 🎯 Contributing
 

@@ -2,10 +2,11 @@ import mongoose from 'mongoose';
 import { Configs } from '../Stores';
 import { logger } from './logger';
 
-const connectToMongo = async () => {
+export const connectToMongo = async () => {
     try {
         const mongoUri = Configs.getValue('mongoUri');
         if (!mongoUri) return logger.error('Mongo URI is not defined');
+        if (isMongoDBConnected()) return;
 
         logger.info('Connecting to MongoDB...');
         await mongoose.connect(mongoUri);
@@ -15,8 +16,22 @@ const connectToMongo = async () => {
     }
 };
 
-const isMongoDBConnected = (): boolean => {
+export const isMongoDBConnected = (): boolean => {
     return mongoose.connection.readyState === 1;
 };
 
-export { connectToMongo, mongoose, isMongoDBConnected };
+export const getAuthModel = async (sessionId: string) => {
+    if (!isMongoDBConnected()) {
+        await connectToMongo();
+    }
+
+    const schema = new mongoose.Schema<{ _id: string; data: string }>({
+        _id: { type: String, required: true },
+        data: String,
+    });
+
+    const modelName = `auth-${sessionId}`;
+    return mongoose.models[modelName] || mongoose.model(modelName, schema);
+};
+
+export { mongoose };
