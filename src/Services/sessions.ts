@@ -1,6 +1,11 @@
 import QRCode from 'qrcode';
 import { Boom } from '@hapi/boom';
-import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion, WASocket } from '@whiskeysockets/baileys';
+import makeWASocket, {
+    ConnectionState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    WASocket,
+} from '@whiskeysockets/baileys';
 import { authState, baileysLogger, logger } from '../Utils';
 import { AuthStateType, ConnectionType } from '../Types/Connection';
 import { SessionStatusType, SockConfig } from '../Types/Session';
@@ -75,41 +80,46 @@ export class Session {
 
     private bindSocketEvents() {
         if (!this.socket) return;
+
         this.socket.ev.process(async (events: EventMap) => {
-            const evKey = Object.keys(events)[0];
-            const evData = events[evKey];
-
-            // Emit the event to the event bus
-            if (evKey !== 'connection.update') {
-                this.emit(evKey as EventMapKey, evData);
-            }
-
-            switch (evKey) {
-                case 'creds.update': {
-                    await this.auth.saveCreds();
-                    break;
-                }
-
-                case 'connection.update': {
-                    if (evData.qr) {
-                        await this.handleQr(evData.qr);
+            for (const [evKey, evData] of Object.entries(events)) {
+                switch (evKey) {
+                    case 'creds.update': {
+                        await this.auth.saveCreds();
+                        break;
                     }
 
-                    // connection status event
-                    if (evData.connection) {
-                        this.emit(evData.connection, evData);
-                        if (evData.connection === 'open') {
-                            this.status = 'open';
-                            this.qr = undefined;
-                        } else if (evData.connection === 'close') {
-                            this.status = 'close';
-                            this.qr = undefined;
-                            const code = (evData.lastDisconnect?.error as Boom | undefined)?.output;
-                            if (!this.forceStop && code?.statusCode === DisconnectReason.restartRequired) {
-                                console.log('Socket closed, restarting session:', this.id);
-                                await this.start().catch((err) => this.logger.error({ err }, 'failed to restart'));
+                    case 'connection.update': {
+                        const update = evData as Partial<ConnectionState>;
+
+                        if (update.qr) {
+                            await this.handleQr(update.qr);
+                        }
+
+                        if (update.connection) {
+                            this.emit(update.connection, update);
+
+                            if (update.connection === 'open') {
+                                this.status = 'open';
+                                this.qr = undefined;
+                            } else if (update.connection === 'close') {
+                                this.status = 'close';
+                                this.qr = undefined;
+
+                                const code = (update.lastDisconnect?.error as Boom | undefined)?.output;
+                                const needRestart = code?.statusCode === DisconnectReason.restartRequired;
+
+                                if (!this.forceStop && needRestart) {
+                                    await this.start().catch((err) => this.logger.error({ err }, 'Failed to restart'));
+                                }
                             }
                         }
+
+                        break;
+                    }
+
+                    default: {
+                        this.emit(evKey as EventMapKey, evData);
                         break;
                     }
                 }
