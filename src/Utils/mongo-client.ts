@@ -30,8 +30,7 @@ export const getAuthModel = async (sessionId: string) => {
         data: String,
     });
 
-    const modelName = `auth-${sessionId}`;
-    return mongoose.models[modelName] || mongoose.model(modelName, schema);
+    return mongoose.models[sessionId] || mongoose.model(sessionId, schema);
 };
 
 export { mongoose };
