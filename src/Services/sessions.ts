@@ -130,6 +130,7 @@ export class Session {
     async start() {
         this.forceStop = false;
         if (!this.auth) await this.init();
+        if (this.status === 'open' || this.status === 'connecting') return;
         const { version } = await fetchLatestBaileysVersion();
         this.status = 'connecting';
         this.socket = makeWASocket({
