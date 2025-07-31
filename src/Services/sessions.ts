@@ -6,7 +6,7 @@ import makeWASocket, {
     fetchLatestBaileysVersion,
     WASocket,
 } from '@whiskeysockets/baileys';
-import { authState, baileysLogger, logger } from '../Utils';
+import { authState, baileysLogger, deleteSessionOnLocal, deleteSessionOnMongo, logger } from '../Utils';
 import { AuthStateType, ConnectionType } from '../Types/Connection';
 import { SessionStatusType, SockConfig } from '../Types/Session';
 import { getSocketConfig } from '../Utils/socket';
@@ -158,6 +158,14 @@ export class Session {
     async logout() {
         if (!this.socket) return;
         await this.socket.logout();
+        switch (this.connectionType) {
+            case 'local':
+                deleteSessionOnLocal(this.id);
+                break;
+            case 'mongodb':
+                await deleteSessionOnMongo(this.id);
+                break;
+        }
         this.qr = undefined;
         this.status = 'close';
     }

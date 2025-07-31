@@ -47,7 +47,9 @@ export class WhatsMulti extends WMEventEmitter {
     }
 
     async deleteSession(id: string): Promise<void> {
-        await this.stopSession(id).catch(() => {});
+        const s = this.sessions.get(id);
+        if (!s) throw new Error('Session not found');
+        await s.logout();
         this.sessions.delete(id);
     }
 
