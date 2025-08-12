@@ -6,8 +6,8 @@ import makeWASocket, {
     fetchLatestBaileysVersion,
     WASocket,
 } from '@whiskeysockets/baileys';
-import { authState, baileysLogger, deleteSessionOnLocal, deleteSessionOnMongo, logger } from '../Utils';
-import { AuthStateType, ConnectionType } from '../Types/Connection';
+import { authState, deleteSessionOnLocal, deleteSessionOnMongo, createBaileysLogger, createLogger } from '../Utils';
+import { AuthStateType, ConfigType, ConnectionType } from '../Types/Connection';
 import { SessionStatusType, SockConfig } from '../Types/Session';
 import { getSocketConfig } from '../Utils/socket';
 import { EventMap, EventMapKey, MetaEventCallbackType } from '../Types';
@@ -21,7 +21,9 @@ export class Session {
     private auth!: AuthStateType;
     private socketConfig: Partial<SockConfig>;
     private logger;
+    private baileysLogger;
     private forceStop = false;
+    private config: ConfigType;
     private eventCallbacks: <K extends EventMapKey>(event: K, data: EventMap[K], meta: MetaEventCallbackType) => void =
         () => {};
 
@@ -29,6 +31,7 @@ export class Session {
         id: string,
         connectionType: ConnectionType,
         sockConfig: Partial<SockConfig> = {},
+        config: ConfigType,
         eventCallbacks: <K extends EventMapKey>(
             event: K,
             data: EventMap[K],
@@ -38,15 +41,20 @@ export class Session {
         this.id = id;
         this.connectionType = connectionType;
         this.socketConfig = getSocketConfig(sockConfig);
-        this.logger = logger;
+        this.config = config;
+        this.logger = createLogger(config.LoggerLevel || 'info');
+        this.baileysLogger = createBaileysLogger(config.BaileysLoggerLevel || 'silent');
         this.eventCallbacks = eventCallbacks;
     }
 
     async init() {
-        const auth = await authState({
-            sessionId: this.id,
-            connectionType: this.connectionType,
-        });
+        const auth = await authState(
+            {
+                sessionId: this.id,
+                connectionType: this.connectionType,
+            },
+            this.config
+        );
 
         const meta = await auth.getMeta();
         if (meta) {
@@ -136,7 +144,7 @@ export class Session {
         this.socket = makeWASocket({
             auth: this.auth.state,
             version,
-            logger: baileysLogger,
+            logger: this.baileysLogger,
             ...this.socketConfig,
         });
         this.bindSocketEvents();
@@ -160,10 +168,10 @@ export class Session {
         await this.socket.logout();
         switch (this.connectionType) {
             case 'local':
-                deleteSessionOnLocal(this.id);
+                deleteSessionOnLocal(this.id, this.config);
                 break;
             case 'mongodb':
-                await deleteSessionOnMongo(this.id);
+                await deleteSessionOnMongo(this.id, this.config);
                 break;
         }
         this.qr = undefined;

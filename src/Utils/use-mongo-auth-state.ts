@@ -3,14 +3,9 @@ import { getAuthModel } from './mongo-client';
 import { UpdateWriteOpResult } from 'mongoose';
 import { MetaSessionStoreType } from '../Types';
 
-const useMongoAuthState = async (
-    sessionId: string
-): Promise<{
-    state: AuthenticationState;
-    saveCreds: () => Promise<void>;
-    setMeta: (value: MetaSessionStoreType) => Promise<UpdateWriteOpResult>;
-    getMeta: () => Promise<MetaSessionStoreType | null>;
-}> => {
+import { AuthStateType } from '../Types/Connection';
+
+const useMongoAuthState = async (sessionId: string): Promise<AuthStateType> => {
     const AuthStateModel = await getAuthModel(sessionId);
 
     const key = (file: string) => file.replace(/\//g, '__').replace(/:/g, '-');

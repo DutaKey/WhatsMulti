@@ -1,6 +1,6 @@
-import { Configs, sessions } from '../Stores';
+import { sessions } from '../Stores';
 import { ConfigType, ConnectionType, SessionInstance, SockConfig } from '../Types';
-import { getAllExistingSessions, logger, validateSessionId } from '../Utils';
+import { getAllExistingSessions, createLogger, validateSessionId } from '../Utils';
 import { Session } from './sessions';
 import { WMEventEmitter } from './event';
 import { MessageContentType, MessageOptionsType, MessageType } from '../Types/Messages';
@@ -9,11 +9,13 @@ import { MessageService } from './messages';
 export class WhatsMulti extends WMEventEmitter {
     private sessions = sessions;
     private readonly messageService;
+    private logger;
     config: ConfigType;
 
     constructor(config: ConfigType = {}) {
         super();
-        Configs.set(config);
+        this.config = config;
+        this.logger = createLogger(config.LoggerLevel || 'info');
         this.messageService = new MessageService();
     }
 
@@ -24,12 +26,18 @@ export class WhatsMulti extends WMEventEmitter {
     ): Promise<void> {
         if (!validateSessionId(id)) throw new Error('Invalid session id');
         if (this.sessions.has(id)) throw new Error('Session exists');
-        const session = new Session(id, connectionType, socketConfig, (event, data, { sessionId, socket }) => {
-            this.emit(event, data, {
-                sessionId,
-                socket,
-            });
-        });
+        const session = new Session(
+            id,
+            connectionType,
+            socketConfig,
+            this.config,
+            (event, data, { sessionId, socket }) => {
+                this.emit(event, data, {
+                    sessionId,
+                    socket,
+                });
+            }
+        );
         await session.init();
         this.sessions.set(id, session);
     }
@@ -91,11 +99,11 @@ export class WhatsMulti extends WMEventEmitter {
     }
 
     async loadSessions(): Promise<void> {
-        const sessionIds = await getAllExistingSessions();
+        const sessionIds = await getAllExistingSessions(this.config);
 
         const tasks = sessionIds.map(({ id, connectionType }) =>
             this.createSession(id, connectionType).catch((err) => {
-                logger.error(`Failed to create session ${id}:`, err);
+                this.logger.error(`Failed to create session ${id}:`, err);
             })
         );
 

@@ -1,13 +1,14 @@
 import { LOCAL_CONNECTION_PATH } from './../Defaults/index';
-import { AuthStateParamsType, AuthStateType } from '../Types/Connection';
+import { AuthStateParamsType, AuthStateType, ConfigType } from '../Types/Connection';
 import { useLocalAuthState } from './use-local-auth-state';
 import { useMongoAuthState } from './use-mongo-auth-state';
 import { connectToMongo, isMongoDBConnected } from './mongo-client';
 import path from 'path';
 import { useMemoryAuthState } from './use-memory-auth-state';
 
-export const authState = async ({ sessionId, connectionType }: AuthStateParamsType): Promise<AuthStateType> => {
-    const sessionDir = path.resolve(LOCAL_CONNECTION_PATH, sessionId);
+export const authState = async ({ sessionId, connectionType }: AuthStateParamsType, config: ConfigType): Promise<AuthStateType> => {
+    const localPath = config.localConnectionPath || LOCAL_CONNECTION_PATH;
+    const sessionDir = path.resolve(localPath, sessionId);
 
     switch (connectionType) {
         case 'local':
@@ -18,7 +19,7 @@ export const authState = async ({ sessionId, connectionType }: AuthStateParamsTy
 
         case 'mongodb':
             if (!isMongoDBConnected()) {
-                await connectToMongo();
+                await connectToMongo(config.mongoUri);
             }
             return useMongoAuthState(sessionId);
     }

@@ -367,9 +367,9 @@ await client.startSession('personal');
 client.on('messages.upsert', async (data, { sessionId }) => {
     const msg = data.messages[0];
     if (msg.key.fromMe) return;
-    
+
     const text = msg.message?.conversation || '';
-    
+
     if (text === 'ping') {
         await client.sendMessage(sessionId, msg, {
             text: `Pong from session: ${sessionId}`
@@ -391,36 +391,36 @@ await client.loadSessions();
 client.on('messages.upsert', async (data, { sessionId }) => {
     const msg = data.messages[0];
     if (msg.key.fromMe) return;
-    
+
     const text = msg.message?.conversation || '';
     const [command, ...args] = text.split(' ');
-    
+
     switch (command) {
         case '/create':
             const newSessionId = args[0] || `session-${Date.now()}`;
             await client.createSession(newSessionId, 'local');
             await client.startSession(newSessionId);
-            
+
             client.sendMessage(sessionId, msg, {
                 text: `Created session: ${newSessionId}`
             });
             break;
-            
+
         case '/list':
             const sessions = await client.getSessions();
-            const sessionList = sessions.map(s => 
+            const sessionList = sessions.map(s =>
                 `${s.id}: ${s.status} (${s.connectionType})`
             ).join('\n');
-            
+
             client.sendMessage(sessionId, msg, {
                 text: `Active sessions:\n${sessionList}`
             });
             break;
-            
+
         case '/qr':
             const targetSession = args[0] || sessionId;
             const qrData = await client.getQr(targetSession);
-            
+
             if (qrData) {
                 const buffer = Buffer.from(qrData.image.replace(/^data:image\/png;base64,/, ''), 'base64');
                 client.sendMessage(sessionId, msg, {
@@ -470,12 +470,12 @@ client.on('qr', (data, { sessionId }) => {
 WhatsMulti is built with TypeScript and provides full type definitions:
 
 ```typescript
-import WhatsMulti, { 
-    ConfigType, 
-    SessionInstance, 
+import WhatsMulti, {
+    ConfigType,
+    SessionInstance,
     ConnectionType,
     MessageContentType,
-    EventMap 
+    EventMap
 } from '@dutakey/whatsmulti';
 
 const config: ConfigType = {

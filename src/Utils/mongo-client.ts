@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
-import { Configs } from '../Stores';
 import { logger } from './logger';
 
-export const connectToMongo = async () => {
+export const connectToMongo = async (mongoUri?: string) => {
     try {
-        const mongoUri = Configs.getValue('mongoUri');
         if (!mongoUri) return logger.error('Mongo URI is not defined');
         if (isMongoDBConnected()) return;
 
