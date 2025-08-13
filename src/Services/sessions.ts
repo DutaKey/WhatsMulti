@@ -115,9 +115,9 @@ export class Session {
                                 this.qr = undefined;
 
                                 const code = (update.lastDisconnect?.error as Boom | undefined)?.output;
-                                const needRestart = code?.statusCode === DisconnectReason.restartRequired;
+                                const shouldReconnect = code?.statusCode !== DisconnectReason.loggedOut;
 
-                                if (!this.forceStop && needRestart) {
+                                if (!this.forceStop && shouldReconnect) {
                                     await this.start().catch((err) => this.logger.error({ err }, 'Failed to restart'));
                                 }
                             }
