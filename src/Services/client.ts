@@ -80,6 +80,8 @@ export class WhatsMulti extends WMEventEmitter {
             id: s.id,
             connectionType: s.connectionType,
             status: s.status,
+            sessionStartTime: s.sessionStartTime,
+            lastDisconnectTime: s.lastDisconnectTime,
             qr: s.qr,
         };
     }
@@ -88,6 +90,8 @@ export class WhatsMulti extends WMEventEmitter {
         return Array.from(this.sessions.values()).map((s) => ({
             id: s.id,
             connectionType: s.connectionType,
+            sessionStartTime: s.sessionStartTime,
+            lastDisconnectTime: s.lastDisconnectTime,
             status: s.status,
         }));
     }

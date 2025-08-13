@@ -8,6 +8,8 @@ export interface SessionInstance {
     id: string;
     connectionType: ConnectionType;
     status: SessionStatusType;
+    sessionStartTime?: number | undefined;
+    lastDisconnectTime?: number | undefined;
     qr?: EventMap['qr'];
 }
 
