@@ -1,7 +1,5 @@
-import { AuthenticationCreds, AuthenticationState, BufferJSON, initAuthCreds, proto } from '@whiskeysockets/baileys';
+import { AuthenticationCreds, BufferJSON, initAuthCreds, proto } from '@whiskeysockets/baileys';
 import { getAuthModel } from './mongo-client';
-import { UpdateWriteOpResult } from 'mongoose';
-import { MetaSessionStoreType } from '../Types';
 
 import { AuthStateType } from '../Types/Connection';
 

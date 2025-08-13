@@ -20,15 +20,12 @@ const start = async () => {
     client.on('open', (_, { sessionId }) => console.log(sessionId, 'is Connected.'));
 
     // Listen for QR Code event and log it
-    // client.on('qr', (data) => console.log(data));
+    client.on('qr', (data) => console.log(data));
 
     // Listen for incoming messages
     client.on('messages.upsert', async (data, { sessionId }) => {
         const msg = data.messages[0];
         if (msg.key.fromMe) return; // Ignore messages sent by the bot
-
-        console.log(msg.message);
-
 
         const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
         const command = text.split(' ')[0]; // Extract command from message
