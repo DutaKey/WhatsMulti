@@ -1,85 +1,96 @@
 import { getJid } from '../Utils/messages';
-import { MessageOptionsType } from '../Types';
-import { MessageType } from '../Types';
-import { SocketType } from '../Types/Socket';
+import { MessageContentType, MessageOptionsType, MessageType } from '../Types';
+import type { WhatsMulti } from './client';
 
 export class MessageService {
-    async sendText(socket: SocketType, recipient: string | MessageType, text: string, options?: MessageOptionsType) {
+    private client: WhatsMulti;
+
+    constructor(client: WhatsMulti) {
+        this.client = client;
+    }
+
+    async send(
+        sessionId: string,
+        recipient: string | MessageType,
+        content: MessageContentType,
+        options?: MessageOptionsType
+    ) {
+        const socket = this.client['getSocket'](sessionId);
+        if (!socket) throw new Error('Session not running');
         const jid = getJid(recipient);
-        return socket.sendMessage(jid, { text }, options);
+        return socket.sendMessage(jid, content, options);
+    }
+
+    async sendText(sessionId: string, recipient: string | MessageType, text: string, options?: MessageOptionsType) {
+        return this.send(sessionId, recipient, { text }, options);
     }
 
     async sendQuote(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         text: string,
         quoted: MessageType,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { text }, { ...options, quoted });
+        return this.send(sessionId, recipient, { text }, { ...options, quoted });
     }
 
     async sendMention(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         text: string,
         mentions: string[],
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { text, mentions }, options);
+        return this.send(sessionId, recipient, { text, mentions }, options);
     }
 
     async forwardMessage(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         message: MessageType,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { forward: message }, options);
+        return this.send(sessionId, recipient, { forward: message }, options);
     }
 
     async sendLocation(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         latitude: number,
         longitude: number,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(
-            jid,
+        return this.send(
+            sessionId,
+            recipient,
             { location: { degreesLatitude: latitude, degreesLongitude: longitude } },
             options
         );
     }
 
     async sendContact(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         displayName: string,
         vcard: string,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { contacts: { displayName, contacts: [{ vcard }] } }, options);
+        return this.send(sessionId, recipient, { contacts: { displayName, contacts: [{ vcard }] } }, options);
     }
 
     async sendReaction(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         emoji: string,
         key: MessageType,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { react: { text: emoji, key } }, options);
+        return this.send(sessionId, recipient, { react: { text: emoji, key } }, options);
     }
 
     async sendPoll(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         name: string,
         values: string[],
@@ -87,22 +98,25 @@ export class MessageService {
         toAnnouncementGroup: boolean = false,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { poll: { name, values, selectableCount, toAnnouncementGroup } }, options);
+        return this.send(
+            sessionId,
+            recipient,
+            { poll: { name, values, selectableCount, toAnnouncementGroup } },
+            options
+        );
     }
 
     async sendLinkPreview(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         text: string,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { text }, options);
+        return this.send(sessionId, recipient, { text }, options);
     }
 
     async sendVideo(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         video: string,
         caption?: string,
@@ -110,29 +124,26 @@ export class MessageService {
         ptv?: boolean,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { video: { url: video }, caption, gifPlayback, ptv }, options);
+        return this.send(sessionId, recipient, { video: { url: video }, caption, gifPlayback, ptv }, options);
     }
 
     async sendAudio(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         audio: string,
         mimetype: string = 'audio/mp4',
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { audio: { url: audio }, mimetype }, options);
+        return this.send(sessionId, recipient, { audio: { url: audio }, mimetype }, options);
     }
 
     async sendImage(
-        socket: SocketType,
+        sessionId: string,
         recipient: string | MessageType,
         image: string,
         caption?: string,
         options?: MessageOptionsType
     ) {
-        const jid = getJid(recipient);
-        return socket.sendMessage(jid, { image: { url: image }, caption }, options);
+        return this.send(sessionId, recipient, { image: { url: image }, caption }, options);
     }
 }

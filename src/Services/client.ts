@@ -1,27 +1,40 @@
 import { sessions } from '../Stores';
-import { ConfigType, ConnectionType, SessionInstance, SockConfig } from '../Types';
+import {
+    ConfigType,
+    ConnectionType,
+    MessageContentType,
+    MessageOptionsType,
+    MessageType,
+    SessionInstance,
+    SockConfig,
+    SocketType,
+} from '../Types';
 import { getAllExistingSessions, createLogger, validateSessionId } from '../Utils';
 import { Session } from './sessions';
 import { WMEventEmitter } from './event';
-import { MessageOptionsType, MessageType } from '../Types/Messages';
 import { MessageService } from './messages';
 
 export class WhatsMulti extends WMEventEmitter {
     private sessions = sessions;
-    private readonly messageService;
-    private logger;
+    public message: MessageService;
+    private logger: ReturnType<typeof createLogger>;
     config: ConfigType;
 
     constructor(config: ConfigType = {}) {
         super();
         this.config = config;
         this.logger = createLogger(config.LoggerLevel || 'info');
-        this.messageService = new MessageService();
+        this.message = new MessageService(this);
     }
 
-    private getSocket(sessionId: string) {
+    private getSessionOrThrow(sessionId: string): Session {
         const s = this.sessions.get(sessionId);
-        if (!s) throw new Error('Session not found');
+        if (!s) throw new Error(`Session not found: ${sessionId}`);
+        return s;
+    }
+
+    private getSocket(sessionId: string): SocketType | undefined {
+        const s = this.getSessionOrThrow(sessionId);
         return s.socket;
     }
 
@@ -47,36 +60,26 @@ export class WhatsMulti extends WMEventEmitter {
         await session.init();
         this.sessions.set(id, session);
     }
-
-    async startSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.start();
+    async startSession(id: string) {
+        return this.getSessionOrThrow(id).start();
     }
 
-    async stopSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.stop();
+    async stopSession(id: string) {
+        return this.getSessionOrThrow(id).stop();
     }
 
-    async deleteSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
+    async restartSession(id: string) {
+        return this.getSessionOrThrow(id).restart();
+    }
+
+    async logoutSession(id: string) {
+        return this.getSessionOrThrow(id).logout();
+    }
+
+    async deleteSession(id: string) {
+        const s = this.getSessionOrThrow(id);
         await s.logout();
         this.sessions.delete(id);
-    }
-
-    async restartSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.restart();
-    }
-
-    async logoutSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.logout();
     }
 
     async getSession(id: string): Promise<SessionInstance | undefined> {
@@ -108,146 +111,26 @@ export class WhatsMulti extends WMEventEmitter {
         return s.qr;
     }
 
-    async loadSessions(): Promise<void> {
+    async loadSessions() {
         const sessionIds = await getAllExistingSessions(this.config);
-
-        const tasks = sessionIds.map(({ id, connectionType }) =>
-            this.createSession(id, connectionType).catch((err) => {
-                this.logger.error(`Failed to create session ${id}:`, err);
-            })
+        const results = await Promise.allSettled(
+            sessionIds.map(({ id, connectionType }) => this.createSession(id, connectionType))
         );
 
-        await Promise.all(tasks);
-    }
-    async sendText(sessionId: string, recipient: string | MessageType, text: string, options?: MessageOptionsType) {
-        return this.messageService.sendText(this.getSocket(sessionId), recipient, text, options);
-    }
-
-    async sendQuote(
-        sessionId: string,
-        recipient: string | MessageType,
-        text: string,
-        quoted: MessageType,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendQuote(this.getSocket(sessionId), recipient, text, quoted, options);
+        results.forEach((res, idx) => {
+            if (res.status === 'rejected') {
+                const { id } = sessionIds[idx];
+                this.logger.error(`Failed to create session ${id}:`, res.reason);
+            }
+        });
     }
 
-    async sendMention(
+    async sendMessage(
         sessionId: string,
         recipient: string | MessageType,
-        text: string,
-        mentions: string[],
+        content: MessageContentType,
         options?: MessageOptionsType
     ) {
-        return this.messageService.sendMention(this.getSocket(sessionId), recipient, text, mentions, options);
-    }
-
-    async forwardMessage(
-        sessionId: string,
-        recipient: string | MessageType,
-        message: MessageType,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.forwardMessage(this.getSocket(sessionId), recipient, message, options);
-    }
-
-    async sendLocation(
-        sessionId: string,
-        recipient: string | MessageType,
-        latitude: number,
-        longitude: number,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendLocation(this.getSocket(sessionId), recipient, latitude, longitude, options);
-    }
-
-    async sendContact(
-        sessionId: string,
-        recipient: string | MessageType,
-        displayName: string,
-        vcard: string,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendContact(this.getSocket(sessionId), recipient, displayName, vcard, options);
-    }
-
-    async sendReaction(
-        sessionId: string,
-        recipient: string | MessageType,
-        emoji: string,
-        key: MessageType,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendReaction(this.getSocket(sessionId), recipient, emoji, key, options);
-    }
-
-    async sendPoll(
-        sessionId: string,
-        recipient: string | MessageType,
-        name: string,
-        values: string[],
-        selectableCount: number = 1,
-        toAnnouncementGroup: boolean = false,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendPoll(
-            this.getSocket(sessionId),
-            recipient,
-            name,
-            values,
-            selectableCount,
-            toAnnouncementGroup,
-            options
-        );
-    }
-
-    async sendLinkPreview(
-        sessionId: string,
-        recipient: string | MessageType,
-        text: string,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendLinkPreview(this.getSocket(sessionId), recipient, text, options);
-    }
-
-    async sendVideo(
-        sessionId: string,
-        recipient: string | MessageType,
-        video: string,
-        caption?: string,
-        gifPlayback?: boolean,
-        ptv?: boolean,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendVideo(
-            this.getSocket(sessionId),
-            recipient,
-            video,
-            caption,
-            gifPlayback,
-            ptv,
-            options
-        );
-    }
-
-    async sendAudio(
-        sessionId: string,
-        recipient: string | MessageType,
-        audio: string,
-        mimetype: string = 'audio/mp4',
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendAudio(this.getSocket(sessionId), recipient, audio, mimetype, options);
-    }
-
-    async sendImage(
-        sessionId: string,
-        recipient: string | MessageType,
-        image: string,
-        caption?: string,
-        options?: MessageOptionsType
-    ) {
-        return this.messageService.sendImage(this.getSocket(sessionId), recipient, image, caption, options);
+        return await this.message.send(sessionId, recipient, content, options);
     }
 }
