@@ -7,7 +7,9 @@ import { ConfigType, ConnectionType } from '../Types';
 
 export const validateSessionId = (id: string) => /^(?:[\w-]+)$/.test(id);
 
-export const getAllExistingSessions = async (config: ConfigType): Promise<{ id: string; connectionType: ConnectionType }[]> => {
+export const getAllExistingSessions = async (
+    config: ConfigType
+): Promise<{ id: string; connectionType: ConnectionType }[]> => {
     const mongoUri = config.mongoUri;
     const sessions: { id: string; connectionType: ConnectionType }[] = [];
 
@@ -28,8 +30,9 @@ export const getAllExistingSessions = async (config: ConfigType): Promise<{ id: 
 };
 
 export const deleteSessionOnLocal = (sessionId: string, config: ConfigType) => {
-    const localPath = config.localConnectionPath || LOCAL_CONNECTION_PATH;
+    const localPath = path.resolve(config.localConnectionPath || LOCAL_CONNECTION_PATH);
     const sessionPath = path.join(localPath, sessionId);
+
     fs.rm(sessionPath, { recursive: true }, (err) => {
         if (err) return logger.error(err);
     });
@@ -47,7 +50,9 @@ const getAllLocalSessions = async (config: ConfigType) => {
     try {
         await fs.promises.mkdir(localPath, { recursive: true });
         const sessions = await fs.promises.readdir(localPath, { withFileTypes: true });
-        return sessions.filter((session) => checkSessionExistOnLocal(session.name, localPath)).map((session) => session.name);
+        return sessions
+            .filter((session) => checkSessionExistOnLocal(session.name, localPath))
+            .map((session) => session.name);
     } catch {
         return [];
     }
