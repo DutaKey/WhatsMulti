@@ -23,8 +23,8 @@ export class Session {
 
     private auth!: AuthStateType;
     private socketConfig: Partial<SockConfig>;
-    private logger;
-    private baileysLogger;
+    private logger: ReturnType<typeof createLogger>;
+    private baileysLogger: ReturnType<typeof createBaileysLogger>;
     private forceStop = false;
     private config: ConfigType;
     private eventCallbacks: <K extends EventMapKey>(event: K, data: EventMap[K], meta: MetaEventCallbackType) => void =

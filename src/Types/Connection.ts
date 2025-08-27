@@ -14,6 +14,7 @@ export type ConfigType = {
     LoggerLevel?: LoggerLevel;
     BaileysLoggerLevel?: LoggerLevel;
     mongoUri?: string;
+    startWhenSessionCreated?: boolean;
 };
 
 export type AuthStateType = {

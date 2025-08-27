@@ -18,7 +18,7 @@ export class WhatsMulti extends WMEventEmitter {
     private sessions = sessions;
     public message: MessageService;
     private logger: ReturnType<typeof createLogger>;
-    config: ConfigType;
+    private config: ConfigType;
 
     constructor(config: ConfigType = {}) {
         super();
@@ -59,6 +59,10 @@ export class WhatsMulti extends WMEventEmitter {
         );
         await session.init();
         this.sessions.set(id, session);
+
+        if (this.config.startWhenSessionCreated) {
+            await session.start();
+        }
     }
     async startSession(id: string) {
         return this.getSessionOrThrow(id).start();
