@@ -23,26 +23,23 @@ yarn add @dutakey/whatsmulti
 
 ## ✨ Key Features
 
-- **Seamless Multi-Session Management**: Effortlessly create, manage, and maintain multiple WhatsApp sessions.
-- **Flexible Storage Options**: Store sessions locally, in memory, or integrate with databases like MongoDB.
-- **Robust Event Handling**: Easily handle events across multiple sessions for real-time monitoring.
-- **QR Code Generation**: Automatically generate QR codes for session authentication.
-- **Message Sending**: Send various types of messages (text, images, etc.) across sessions.
-- **Session Lifecycle Management**: Start, stop, restart, and delete sessions programmatically.
+-   **Seamless Multi-Session Management**: Effortlessly create, manage, and maintain multiple WhatsApp sessions.
+-   **Flexible Storage Options**: Store sessions locally, in memory, or integrate with databases like MongoDB.
+-   **Robust Event Handling**: Easily handle events across multiple sessions for real-time monitoring.
+-   **QR Code Generation**: Automatically generate QR codes for session authentication.
+-   **Message Sending**: Send various types of messages (text, images, etc.) across sessions.
+-   **Session Lifecycle Management**: Start, stop, restart, and delete sessions programmatically.
 
 ## 📋 Table of Contents
 
-- [Quick Start](#-quick-start)
-- [Configuration](#-configuration)
-- [API Reference](#-api-reference)
-- [Session Management](#-session-management)
-- [Event Handling](#-event-handling)
-- [Message Operations](#-message-operations)
-- [Storage Options](#-storage-options)
-- [Examples](#-examples)
-- [TypeScript Support](#-typescript-support)
-- [Contributing](#-contributing)
-- [License](#-license)
+-   [Quick Start](#-quick-start)
+-   [Configuration](#-configuration)
+-   [Session Management](#-session-management)
+-   [Event Handling](#-event-handling)
+-   [Message Operations](#-message-operations)
+-   [Storage Options](#-storage-options)
+-   [Contributing](#-contributing)
+-   [License](#-license)
 
 ## 🚀 Quick Start
 
@@ -83,6 +80,7 @@ interface ConfigType {
     LoggerLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
     BaileysLoggerLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
     mongoUri?: string;
+    startWhenSessionCreated?: boolean;
 }
 ```
 
@@ -95,68 +93,6 @@ interface SockConfig {
     printQR?: boolean;
     // ... other Baileys SocketConfig options
 }
-```
-
-## 📚 API Reference
-
-### WhatsMulti Class
-
-#### Constructor
-
-```typescript
-new WhatsMulti(config?: ConfigType)
-```
-
-#### Methods
-
-##### Session Management
-
-```typescript
-// Create a new session
-await createSession(
-    id: string,
-    connectionType: 'local' | 'mongodb' | 'memory' = 'local',
-    socketConfig?: Partial<SockConfig>
-): Promise<void>
-
-// Start a session
-await startSession(id: string): Promise<void>
-
-// Stop a session
-await stopSession(id: string): Promise<void>
-
-// Restart a session
-await restartSession(id: string): Promise<void>
-
-// Delete a session
-await deleteSession(id: string): Promise<void>
-
-// Logout a session
-await logoutSession(id: string): Promise<void>
-
-// Get session information
-await getSession(id: string): Promise<SessionInstance | undefined>
-
-// Get all sessions
-await getSessions(): Promise<SessionInstance[]>
-
-// Get QR code for a session
-await getQr(id: string): Promise<{ image: string; qr: string } | undefined>
-
-// Load existing sessions
-await loadSessions(): Promise<void>
-```
-
-##### Message Operations
-
-```typescript
-// Send a message
-await sendMessage(
-    sessionId: string,
-    recipient: string | MessageType,
-    message: MessageContentType,
-    options?: MessageOptionsType
-): Promise<void>
 ```
 
 ## 🔧 Session Management
@@ -234,7 +170,7 @@ client.on('qr', (data, { sessionId }) => {
 
 // Message events
 client.on('messages.upsert', (data, { sessionId, socket }) => {
-    data.messages.forEach(message => {
+    data.messages.forEach((message) => {
         console.log(`New message in ${sessionId}:`, message);
     });
 });
@@ -268,47 +204,108 @@ client.process((events, { sessionId, socket }) => {
 
 ## 💬 Message Operations
 
-### Sending Messages
+Selain `sendMessage`, WhatsMulti menyediakan helper method yang lebih sederhana untuk mengirim berbagai tipe pesan melalui `client.message`.
+
+### Generic Send
 
 ```typescript
-// Text message
-await client.sendMessage('session-1', '1234567890@s.whatsapp.net', {
-    text: 'Hello, World!'
-});
-
-// Reply to a message
-await client.sendMessage('session-1', originalMessage, {
-    text: 'This is a reply'
-}, {
-    quoted: originalMessage
-});
-
-// Image message
-await client.sendMessage('session-1', '1234567890@s.whatsapp.net', {
-    image: { url: 'https://example.com/image.jpg' },
-    caption: 'Check out this image!'
-});
-
-// Document message
-await client.sendMessage('session-1', '1234567890@s.whatsapp.net', {
-    document: { url: 'https://example.com/document.pdf' },
-    fileName: 'document.pdf',
-    mimetype: 'application/pdf'
-});
+await client.sendMessage('session-1', '1234567890@s.whatsapp.net', { text: 'Hello World!' });
 ```
 
-### Message Types
+### MessageService Helper Methods
 
-WhatsMulti supports all Baileys message types:
-- Text messages
-- Image messages
-- Video messages
-- Audio messages
-- Document messages
-- Sticker messages
-- Location messages
-- Contact messages
-- And more...
+WhatsMulti expose `client.message` untuk mempermudah pengiriman pesan.
+
+#### Send Text
+
+```typescript
+await client.message.sendText('session-1', '1234567890@s.whatsapp.net', 'Hello World!');
+```
+
+#### Send Text with Quote
+
+```typescript
+await client.message.sendQuote('session-1', msg, 'This is a reply', msg);
+```
+
+#### Send Text with Mention
+
+```typescript
+await client.message.sendMention('session-1', '1234567890@s.whatsapp.net', 'Hello @user', [
+    '1234567890@s.whatsapp.net',
+]);
+```
+
+#### Forward Message
+
+```typescript
+await client.message.forwardMessage('session-1', '1234567890@s.whatsapp.net', msg);
+```
+
+#### Send Location
+
+```typescript
+await client.message.sendLocation('session-1', '1234567890@s.whatsapp.net', -6.2, 106.816666);
+```
+
+#### Send Contact
+
+```typescript
+const vcard = `BEGIN:VCARD
+VERSION:3.0
+FN:John Doe
+TEL:+1234567890
+END:VCARD`;
+
+await client.message.sendContact('session-1', '1234567890@s.whatsapp.net', 'John Doe', vcard);
+```
+
+#### Send Reaction
+
+```typescript
+await client.message.sendReaction('session-1', msg.key.remoteJid!, '👍', msg);
+```
+
+#### Send Poll
+
+```typescript
+await client.message.sendPoll('session-1', '1234567890@s.whatsapp.net', 'Favorite Fruit?', ['Apple', 'Banana'], 1);
+```
+
+#### Send Link Preview
+
+```typescript
+await client.message.sendLinkPreview('session-1', '1234567890@s.whatsapp.net', 'Check this out: https://example.com');
+```
+
+#### Send Image
+
+```typescript
+await client.message.sendImage(
+    'session-1',
+    '1234567890@s.whatsapp.net',
+    'https://example.com/image.jpg',
+    'Nice image!'
+);
+```
+
+#### Send Video
+
+```typescript
+await client.message.sendVideo(
+    'session-1',
+    '1234567890@s.whatsapp.net',
+    'https://example.com/video.mp4',
+    'Watch this!',
+    true
+);
+```
+
+#### Send Audio
+
+```typescript
+await client.message.sendAudio('session-1', '1234567890@s.whatsapp.net', 'https://example.com/audio.mp3', 'audio/mp3');
+```
 
 ## 💾 Storage Options
 
@@ -330,7 +327,7 @@ Sessions are stored in a MongoDB database:
 
 ```typescript
 const client = new WhatsMulti({
-    mongoUri: 'mongodb://localhost:27017/whatsmulti-db'
+    mongoUri: 'mongodb://localhost:27017/whatsmulti-db',
 });
 
 await client.createSession('my-session', 'mongodb');
@@ -342,233 +339,6 @@ Sessions are stored in memory (lost on restart):
 
 ```typescript
 await client.createSession('my-session', 'memory');
-```
-
-## 📂 Examples
-
-### Basic Multi-Session Bot
-
-```typescript
-import WhatsMulti from '@dutakey/whatsmulti';
-
-const client = new WhatsMulti({
-    mongoUri: 'mongodb://localhost:27017/whatsmulti-db',
-});
-
-// Create multiple sessions
-await client.createSession('business', 'mongodb', { printQR: true });
-await client.createSession('personal', 'local', { printQR: true });
-
-// Start all sessions
-await client.startSession('business');
-await client.startSession('personal');
-
-// Handle messages across all sessions
-client.on('messages.upsert', async (data, { sessionId }) => {
-    const msg = data.messages[0];
-    if (msg.key.fromMe) return;
-
-    const text = msg.message?.conversation || '';
-
-    if (text === 'ping') {
-        await client.sendMessage(sessionId, msg, {
-            text: `Pong from session: ${sessionId}`
-        });
-    }
-});
-```
-
-### Dynamic Session Management
-
-```typescript
-import WhatsMulti from '@dutakey/whatsmulti';
-
-const client = new WhatsMulti();
-
-// Load existing sessions on startup
-await client.loadSessions();
-
-client.on('messages.upsert', async (data, { sessionId }) => {
-    const msg = data.messages[0];
-    if (msg.key.fromMe) return;
-
-    const text = msg.message?.conversation || '';
-    const [command, ...args] = text.split(' ');
-
-    switch (command) {
-        case '/create':
-            const newSessionId = args[0] || `session-${Date.now()}`;
-            await client.createSession(newSessionId, 'local');
-            await client.startSession(newSessionId);
-
-            client.sendMessage(sessionId, msg, {
-                text: `Created session: ${newSessionId}`
-            });
-            break;
-
-        case '/list':
-            const sessions = await client.getSessions();
-            const sessionList = sessions.map(s =>
-                `${s.id}: ${s.status} (${s.connectionType})`
-            ).join('\n');
-
-            client.sendMessage(sessionId, msg, {
-                text: `Active sessions:\n${sessionList}`
-            });
-            break;
-
-        case '/qr':
-            const targetSession = args[0] || sessionId;
-            const qrData = await client.getQr(targetSession);
-
-            if (qrData) {
-                const buffer = Buffer.from(qrData.image.replace(/^data:image\/png;base64,/, ''), 'base64');
-                client.sendMessage(sessionId, msg, {
-                    image: buffer,
-                    caption: `QR Code for session: ${targetSession}`
-                });
-            }
-            break;
-    }
-});
-```
-
-### Event Logging and Monitoring
-
-```typescript
-import WhatsMulti from '@dutakey/whatsmulti';
-
-const client = new WhatsMulti({
-    LoggerLevel: 'info',
-    BaileysLoggerLevel: 'error'
-});
-
-// Monitor all session events
-client.process((events, { sessionId }) => {
-    Object.entries(events).forEach(([event, data]) => {
-        console.log(`[${sessionId}] ${event}:`, data);
-    });
-});
-
-// Specific event handlers
-client.on('open', (_, { sessionId }) => {
-    console.log(`✅ Session ${sessionId} connected successfully`);
-});
-
-client.on('close', (_, { sessionId }) => {
-    console.log(`❌ Session ${sessionId} disconnected`);
-});
-
-client.on('qr', (data, { sessionId }) => {
-    console.log(`📱 QR Code generated for ${sessionId}`);
-    // Save QR code or send to admin
-});
-```
-
-## 🔷 TypeScript Support
-
-WhatsMulti is built with TypeScript and provides full type definitions:
-
-```typescript
-import WhatsMulti, {
-    ConfigType,
-    SessionInstance,
-    ConnectionType,
-    MessageContentType,
-    EventMap
-} from '@dutakey/whatsmulti';
-
-const config: ConfigType = {
-    defaultConnectionType: 'local',
-    LoggerLevel: 'info'
-};
-
-const client = new WhatsMulti(config);
-
-// Type-safe event handling
-client.on('messages.upsert', (data: EventMap['messages.upsert'], meta) => {
-    // data is properly typed
-    data.messages.forEach(message => {
-        // message is typed as WAMessage
-    });
-});
-```
-
-## 🔧 Advanced Configuration
-
-### Custom Logger Configuration
-
-```typescript
-const client = new WhatsMulti({
-    LoggerLevel: 'debug', // WhatsMulti logs
-    BaileysLoggerLevel: 'error', // Baileys logs
-});
-```
-
-### MongoDB Connection Options
-
-```typescript
-const client = new WhatsMulti({
-    mongoUri: 'mongodb://username:password@localhost:27017/whatsmulti-db?authSource=admin'
-});
-```
-
-### Socket Configuration
-
-```typescript
-await client.createSession('my-session', 'local', {
-    printQR: false,
-    qrMaxWaitMs: 30000,
-    disableQRRetry: false,
-    // Any other Baileys SocketConfig options
-    browser: ['WhatsMulti', 'Chrome', '1.0.0'],
-    connectTimeoutMs: 60000,
-});
-```
-
-## 🐛 Error Handling
-
-```typescript
-try {
-    await client.createSession('my-session', 'local');
-    await client.startSession('my-session');
-} catch (error) {
-    if (error.message === 'Session exists') {
-        console.log('Session already exists');
-    } else if (error.message === 'Invalid session id') {
-        console.log('Invalid session ID format');
-    } else {
-        console.error('Unexpected error:', error);
-    }
-}
-
-// Handle connection errors
-client.on('close', async (data, { sessionId }) => {
-    console.log(`Session ${sessionId} disconnected, attempting to reconnect...`);
-    try {
-        await client.restartSession(sessionId);
-    } catch (error) {
-        console.error(`Failed to restart session ${sessionId}:`, error);
-    }
-});
-```
-
-## 📋 Session ID Requirements
-
-Session IDs must follow these rules:
-- Only alphanumeric characters, hyphens, and underscores
-- No spaces or special characters
-- Validated by regex: `/^(?:[\w-]+)$/`
-
-```typescript
-// Valid session IDs
-await client.createSession('my-session', 'local');
-await client.createSession('session_1', 'local');
-await client.createSession('business-bot', 'local');
-
-// Invalid session IDs (will throw error)
-await client.createSession('my session', 'local'); // spaces not allowed
-await client.createSession('session@123', 'local'); // @ not allowed
 ```
 
 ## 🎯 Contributing
