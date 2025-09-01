@@ -43,7 +43,7 @@ export class Session {
     ) {
         this.id = id;
         this.connectionType = connectionType;
-        this.socketConfig = getSocketConfig(sockConfig);
+        this.socketConfig = getSocketConfig(sockConfig, id);
         this.config = config;
         this.logger = createLogger(config.LoggerLevel || 'info');
         this.baileysLogger = createBaileysLogger(config.BaileysLoggerLevel || 'silent');
@@ -54,7 +54,7 @@ export class Session {
         this.auth = await authState({ sessionId: this.id, connectionType: this.connectionType }, this.config);
 
         const meta = await this.auth.getMeta();
-        if (meta) this.socketConfig = getSocketConfig(meta);
+        if (meta) this.socketConfig = getSocketConfig(meta, this.id);
         await this.auth.setMeta(this.socketConfig);
     }
 
