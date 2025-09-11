@@ -12,7 +12,7 @@
         "lint:fix": "eslint . --fix",
         "prettier": "prettier --check .",
         "prettier:fix": "prettier --write .",
-        "example": "bun run Example/example.ts",
+        "example": "bun run example/example.ts",
         "prepublish-check": "bun run build && bun run lint:fix && bun run prettier:fix"
     },
     "files": [

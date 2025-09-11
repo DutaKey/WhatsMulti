@@ -1,20 +1,41 @@
-import { Configs, sessions } from '../Stores';
-import { ConfigType, ConnectionType, SessionInstance, SockConfig } from '../Types';
-import { getAllExistingSessions, logger, validateSessionId } from '../Utils';
+import { sessions } from '../Stores';
+import {
+    ConfigType,
+    ConnectionType,
+    MessageContentType,
+    MessageOptionsType,
+    MessageType,
+    SessionInstance,
+    SockConfig,
+    SocketType,
+} from '../Types';
+import { getAllExistingSessions, createLogger, validateSessionId } from '../Utils';
 import { Session } from './sessions';
 import { WMEventEmitter } from './event';
-import { MessageContentType, MessageOptionsType, MessageType } from '../Types/Messages';
 import { MessageService } from './messages';
 
 export class WhatsMulti extends WMEventEmitter {
     private sessions = sessions;
-    private readonly messageService;
-    config: ConfigType;
+    public message: MessageService;
+    private logger: ReturnType<typeof createLogger>;
+    private config: ConfigType;
 
     constructor(config: ConfigType = {}) {
         super();
-        Configs.set(config);
-        this.messageService = new MessageService();
+        this.config = config;
+        this.logger = createLogger(config.LoggerLevel || 'info');
+        this.message = new MessageService(this);
+    }
+
+    private getSessionOrThrow(sessionId: string): Session {
+        const s = this.sessions.get(sessionId);
+        if (!s) throw new Error(`Session not found: ${sessionId}`);
+        return s;
+    }
+
+    private getSocket(sessionId: string): SocketType | undefined {
+        const s = this.getSessionOrThrow(sessionId);
+        return s.socket;
     }
 
     async createSession(
@@ -24,45 +45,45 @@ export class WhatsMulti extends WMEventEmitter {
     ): Promise<void> {
         if (!validateSessionId(id)) throw new Error('Invalid session id');
         if (this.sessions.has(id)) throw new Error('Session exists');
-        const session = new Session(id, connectionType, socketConfig, (event, data, { sessionId, socket }) => {
-            this.emit(event, data, {
-                sessionId,
-                socket,
-            });
-        });
+        const session = new Session(
+            id,
+            connectionType,
+            socketConfig,
+            this.config,
+            (event, data, { sessionId, socket }) => {
+                this.emit(event, data, {
+                    sessionId,
+                    socket,
+                });
+            }
+        );
         await session.init();
         this.sessions.set(id, session);
+
+        if (this.config.startWhenSessionCreated) {
+            await session.start();
+        }
+    }
+    async startSession(id: string) {
+        return this.getSessionOrThrow(id).start();
     }
 
-    async startSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.start();
+    async stopSession(id: string) {
+        return this.getSessionOrThrow(id).stop();
     }
 
-    async stopSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.stop();
+    async restartSession(id: string) {
+        return this.getSessionOrThrow(id).restart();
     }
 
-    async deleteSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
+    async logoutSession(id: string) {
+        return this.getSessionOrThrow(id).logout();
+    }
+
+    async deleteSession(id: string) {
+        const s = this.getSessionOrThrow(id);
         await s.logout();
         this.sessions.delete(id);
-    }
-
-    async restartSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.restart();
-    }
-
-    async logoutSession(id: string): Promise<void> {
-        const s = this.sessions.get(id);
-        if (!s) throw new Error('Session not found');
-        await s.logout();
     }
 
     async getSession(id: string): Promise<SessionInstance | undefined> {
@@ -72,6 +93,8 @@ export class WhatsMulti extends WMEventEmitter {
             id: s.id,
             connectionType: s.connectionType,
             status: s.status,
+            sessionStartTime: s.sessionStartTime,
+            lastDisconnectTime: s.lastDisconnectTime,
             qr: s.qr,
         };
     }
@@ -80,6 +103,8 @@ export class WhatsMulti extends WMEventEmitter {
         return Array.from(this.sessions.values()).map((s) => ({
             id: s.id,
             connectionType: s.connectionType,
+            sessionStartTime: s.sessionStartTime,
+            lastDisconnectTime: s.lastDisconnectTime,
             status: s.status,
         }));
     }
@@ -90,27 +115,26 @@ export class WhatsMulti extends WMEventEmitter {
         return s.qr;
     }
 
-    async loadSessions(): Promise<void> {
-        const sessionIds = await getAllExistingSessions();
-
-        const tasks = sessionIds.map(({ id, connectionType }) =>
-            this.createSession(id, connectionType).catch((err) => {
-                logger.error(`Failed to create session ${id}:`, err);
-            })
+    async loadSessions() {
+        const sessionIds = await getAllExistingSessions(this.config);
+        const results = await Promise.allSettled(
+            sessionIds.map(({ id, connectionType }) => this.createSession(id, connectionType))
         );
 
-        await Promise.all(tasks);
+        results.forEach((res, idx) => {
+            if (res.status === 'rejected') {
+                const { id } = sessionIds[idx];
+                this.logger.error(`Failed to create session ${id}:`, res.reason);
+            }
+        });
     }
 
     async sendMessage(
         sessionId: string,
         recipient: string | MessageType,
-        message: MessageContentType,
+        content: MessageContentType,
         options?: MessageOptionsType
     ) {
-        const s = this.sessions.get(sessionId);
-        if (!s) throw new Error('Session not found');
-
-        await this.messageService.send(s.socket, recipient, message, options);
+        return await this.message.send(sessionId, recipient, content, options);
     }
 }

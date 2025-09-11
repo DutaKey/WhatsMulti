@@ -1,6 +1,6 @@
-import { WAMessage } from '@whiskeysockets/baileys';
+import { MessageType } from '../Types/Messages';
 
-export const getJid = (recipient: string | WAMessage) => {
+export const getJid = (recipient: string | MessageType) => {
     let jid: string;
 
     if (typeof recipient === 'string') {
