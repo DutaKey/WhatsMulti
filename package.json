@@ -23,19 +23,19 @@
         "access": "public"
     },
     "dependencies": {
-        "@whiskeysockets/baileys": "^6.7.17",
-        "mongoose": "^8.15.0",
+        "@whiskeysockets/baileys": "^6.17.16",
+        "mongoose": "^8.19.2",
         "pino": "^7.11.0",
-        "pino-pretty": "^13.0.0",
+        "pino-pretty": "^13.1.2",
         "qrcode": "^1.5.4"
     },
     "devDependencies": {
-        "@eslint/js": "^9.27.0",
-        "eslint": "^9.27.0",
-        "globals": "^16.1.0",
-        "semantic-release": "^24.2.4",
-        "typescript": "^5.8.3",
-        "typescript-eslint": "^8.32.1"
+        "@eslint/js": "^9.38.0",
+        "eslint": "^9.38.0",
+        "globals": "^16.4.0",
+        "semantic-release": "^24.2.9",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.46.2"
     },
     "repository": {
         "type": "git",
